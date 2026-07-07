@@ -1,5 +1,26 @@
 # Version History
 
+## v1.1.0
+
+Date: 2026-07-07
+
+### 변경 내용
+
+* 가상 서버 배포 자동화 및 백그라운드 구동 환경 추가 (VM 배포 쉘 스크립트 및 systemd 서비스 템플릿 구현)
+* 환경 변수 구성용 `.env.example` 템플릿 신규 지원
+* 로컬호스트 실행 검증 완료 (`main.py schedule` 로컬 가동 테스트)
+
+### 수정 파일
+
+* gokospi.service (신규)
+* deploy.sh (신규)
+* .env.example (신규)
+* ver.md
+
+### 비고
+
+* 16단계 전체 자동 구축 완료 및 가상 서버 배포 준비 완료
+
 ## v1.0.5
 
 Date: 2026-07-07

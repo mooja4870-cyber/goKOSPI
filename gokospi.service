@@ -1,0 +1,15 @@
+[Unit]
+Description=goKOSPI Rebalancing Alerts Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__DIR__
+ExecStart=__DIR__/venv/bin/python3 main.py schedule
+Restart=always
+RestartSec=10
+EnvironmentFile=__DIR__/.env
+
+[Install]
+WantedBy=multi-user.target

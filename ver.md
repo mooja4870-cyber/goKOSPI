@@ -1,5 +1,31 @@
 # Version History
 
+## v1.0.0
+
+Date: 2026-07-07
+
+### 변경 내용
+
+* goKOSPI 리밸런싱 패턴 추적 시스템 전체 구현 완료 (DAY 5 ~ DAY 16)
+* 50대 우량 종목 및 코스피 지수 데이터 수집기 구현 (Python `yfinance` 연동)
+* ATR 및 가중 누적 변동성 기반 과열/조정 신호 엔진 탑재
+* 디스코드 웹훅 연동 실시간 경보 메시지 송출 모듈 구축
+* 과거 3개년 시뮬레이션용 로컬 백테스터 완성 및 검증
+
+### 수정 파일
+
+* requirements.txt
+* collector.py
+* engine.py
+* notifier.py
+* backtest.py
+* main.py
+* ver.md
+
+### 비고
+
+* 백테스트 검증 및 디스코드 연동 테스트 완료 (v1.0.0 최종 릴리즈)
+
 ## v0.1.0
 
 Date: 2026-07-07

@@ -19,7 +19,7 @@ krx_stocks = []
 
 def init_krx_stocks():
     """
-    FinanceDataReader를 통해 코스피/코스닥 전 종목 메타데이터를 가져와 로딩합니다.
+    FinanceDataReader를 통해 코스피/코스닥 전 종목 및 국내 상장 ETF 메타데이터를 가져와 로딩합니다.
     """
     global krx_stocks
     try:
@@ -46,11 +46,40 @@ def init_krx_stocks():
                 "name": name,
                 "ticker": ticker
             })
+
+        print("[*] 국내 상장 ETF 메타데이터 로딩 시작 (finance-datareader)...")
+        try:
+            df_etf = fdr.StockListing('ETF/KR')
+            for _, row in df_etf.iterrows():
+                code = row.get('Symbol')
+                if not code:
+                    code = row.get('Code')
+                name = row.get('Name')
+                if not code or not name:
+                    continue
+                
+                # ETF는 야후 파이낸스에서 .KS 접미사 사용
+                ticker = f"{code}.KS"
+                temp_stocks.append({
+                    "name": f"[ETF] {name}",
+                    "ticker": ticker
+                })
+        except Exception as etf_err:
+            print(f"[!] ETF 메타데이터 로딩 실패: {etf_err}")
+
+        # 중복 방지 (티커 기준)
+        seen = set()
+        unique_stocks = []
+        for s in temp_stocks:
+            if s["ticker"] not in seen:
+                seen.add(s["ticker"])
+                unique_stocks.append(s)
+
         # 가나다 순 기본 정렬
-        krx_stocks = sorted(temp_stocks, key=lambda x: x["name"])
-        print(f"[*] KRX 전 종목 로딩 완료 (총 {len(krx_stocks)}개 종목 로드됨)")
+        krx_stocks = sorted(unique_stocks, key=lambda x: x["name"])
+        print(f"[*] KRX 전 종목 및 ETF 로딩 완료 (총 {len(krx_stocks)}개 종목 로드됨)")
     except Exception as e:
-        print(f"[!] KRX 종목 로딩 실패: {e}")
+        print(f"[!] KRX/ETF 종목 로딩 실패: {e}")
 
 def update_signal_cache_worker():
     """

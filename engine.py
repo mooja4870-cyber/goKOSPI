@@ -24,9 +24,37 @@ def calculate_atr(df: pd.DataFrame, period: int = 20) -> pd.Series:
     atr = tr.rolling(window=period).mean()
     return atr
 
+def classify_signal_7stage(z_score: float) -> str:
+    """
+    Z-Score 값을 7단계 투자 신호로 분류합니다.
+    
+    단계 정의:
+      STRONG_SELL    : Z >=  2.5  → 강력매도
+      OVERHEAT       : Z >=  1.8  → 익절권장
+      CAUTION        : Z >=  1.0  → 경계관망
+      HOLD           : -1.0 < Z < 1.0 → 중립대기
+      MILD_BUY       : Z <= -1.0  → 관심매집
+      BUY            : Z <= -1.8  → 매수시그널
+      STRONG_BUY     : Z <= -2.5  → 강력매수
+    """
+    if z_score >= 2.5:
+        return 'STRONG_SELL'
+    elif z_score >= 1.8:
+        return 'OVERHEAT'
+    elif z_score >= 1.0:
+        return 'CAUTION'
+    elif z_score <= -2.5:
+        return 'STRONG_BUY'
+    elif z_score <= -1.8:
+        return 'BUY'
+    elif z_score <= -1.0:
+        return 'MILD_BUY'
+    else:
+        return 'HOLD'
+
 def calculate_rebalancing_signals(df: pd.DataFrame, threshold_z: float = 2.5) -> pd.DataFrame:
     """
-    주어진 가격 데이터를 바탕으로 누적 변동성 스코어 및 과열/조정 신호를 계산합니다.
+    주어진 가격 데이터를 바탕으로 누적 변동성 스코어 및 7단계 신호를 계산합니다.
     """
     df = df.copy()
     
@@ -42,52 +70,32 @@ def calculate_rebalancing_signals(df: pd.DataFrame, threshold_z: float = 2.5) ->
     df['ATR_Ratio'] = df['ATR_20'] / df['Close']
     
     # 4. 변동성 대비 최근 상승률 배율 (Z-Score)
-    # ATR 비율이 0이 되는 예외 방지
     df['Z_Score'] = df['Sc'] / df['ATR_Ratio'].replace(0, np.nan)
     
-    # 5. 시그널 및 상태 추적
-    df['Signal'] = 'HOLD' # HOLD, OVERHEAT, REBALANCED
-    df['Peak_Close'] = df['Close'] # 과열 발생 시의 고점 추적용
-    
-    # 상태 머신 시뮬레이션 (순차 처리)
-    current_state = 'NORMAL' # NORMAL, OVERHEATED
-    peak_price = 0.0
+    # 5. 7단계 신호 분류 (ATR 계산 대기 행은 HOLD 처리)
+    df['Signal'] = 'HOLD'
+    df['Peak_Close'] = df['Close']
     
     for i in range(len(df)):
-        if i < 20: # ATR 20일 계산 대기
+        if i < 20:  # ATR 20일 계산 대기
             continue
-            
-        close_price = df.loc[df.index[i], 'Close']
-        z_score = df.loc[df.index[i], 'Z_Score']
-        
-        if current_state == 'NORMAL':
-            # 과열 상태 진입 기준 충족
-            if z_score >= threshold_z:
-                df.loc[df.index[i], 'Signal'] = 'OVERHEAT'
-                current_state = 'OVERHEATED'
-                peak_price = close_price
-            else:
-                df.loc[df.index[i], 'Signal'] = 'HOLD'
-        
-        elif current_state == 'OVERHEATED':
-            # 고점 갱신
-            if close_price > peak_price:
-                peak_price = close_price
-            
-            # 고점 대비 하락률 계산 (조정폭)
-            drawdown = (peak_price - close_price) / peak_price
-            
-            # 4.5% 이상 조정 완료 시 리밸런싱 종료 신호 발생
-            if drawdown >= 0.045:
-                df.loc[df.index[i], 'Signal'] = 'REBALANCED'
-                current_state = 'NORMAL'
-                peak_price = 0.0
-            else:
-                df.loc[df.index[i], 'Signal'] = 'OVERHEATED_HOLD'
-                
-        df.loc[df.index[i], 'Peak_Close'] = peak_price
-        
+        z = df.loc[df.index[i], 'Z_Score']
+        if pd.isna(z):
+            continue
+        df.loc[df.index[i], 'Signal'] = classify_signal_7stage(z)
+    
     return df
+
+# 7단계 신호 → 화면 뱃지 레이블 & 색상 매핑
+SIGNAL_META = {
+    'STRONG_SELL': {'label': '🔴 강력매도',  'badge': 'strong-sell'},
+    'OVERHEAT':    {'label': '🟠 익절권장',   'badge': 'overheat'},
+    'CAUTION':     {'label': '🟡 경계관망',   'badge': 'caution'},
+    'HOLD':        {'label': '⚪ 중립대기',   'badge': 'hold'},
+    'MILD_BUY':    {'label': '🩵 관심매집',   'badge': 'mild-buy'},
+    'BUY':         {'label': '🟢 매수시그널', 'badge': 'buy'},
+    'STRONG_BUY':  {'label': '💚 강력매수',   'badge': 'strong-buy'},
+}
 
 def analyze_last_signal(df: pd.DataFrame, ticker: str, threshold_z: float = 2.5) -> Dict[str, Any]:
     """

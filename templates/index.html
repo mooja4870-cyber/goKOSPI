@@ -221,9 +221,13 @@
             font-weight: 700;
         }
 
-        .badge.overheat { background: rgba(255, 59, 48, 0.12); color: var(--accent-red); border: 1px solid rgba(255, 59, 48, 0.2); }
-        .badge.rebalanced { background: rgba(52, 199, 89, 0.12); color: var(--accent-green); border: 1px solid rgba(52, 199, 89, 0.2); }
-        .badge.hold { background: rgba(255, 255, 255, 0.03); color: var(--text-secondary); }
+        .badge.strong-sell { background: rgba(255, 45, 45, 0.18); color: #ff2d2d; border: 1px solid rgba(255, 45, 45, 0.35); font-weight: 700; }
+        .badge.overheat    { background: rgba(255, 149, 0, 0.15); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.3); }
+        .badge.caution     { background: rgba(255, 214, 10, 0.12); color: #c8a800; border: 1px solid rgba(255, 214, 10, 0.25); }
+        .badge.hold        { background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.06); }
+        .badge.mild-buy    { background: rgba(90, 200, 250, 0.12); color: #5ac8fa; border: 1px solid rgba(90, 200, 250, 0.25); }
+        .badge.buy         { background: rgba(52, 199, 89, 0.12); color: var(--accent-green); border: 1px solid rgba(52, 199, 89, 0.25); }
+        .badge.strong-buy  { background: rgba(52, 199, 89, 0.22); color: #00e05a; border: 1px solid rgba(52, 199, 89, 0.45); font-weight: 700; }
 
         .spinner {
             border: 3px solid rgba(255, 255, 255, 0.04);
@@ -457,18 +461,23 @@
                 }
 
                 // 뱃지 및 설명 생성
-                let badgeClass = 'hold';
-                let badgeLabel = '대기 (HOLD)';
+                let badgeClass, badgeLabel;
+                ({ badgeClass, badgeLabel } = getSignalBadge(item.signal));
+                
                 let actionGuide = '현재 평온한 관망(HOLD) 상태입니다. 굳이 비싸게 사거나 싸게 팔 이유가 없으므로 기존 포지션을 차분히 유지하며 주가 흐름을 관찰하세요.';
 
-                if (item.signal === 'OVERHEAT' || item.signal === 'OVERHEATED_HOLD') {
-                    badgeClass = 'overheat';
-                    badgeLabel = '과열주의 (SELL)';
-                    actionGuide = '주가가 단기 급등하여 심한 과열권에 진입했습니다! 조만간 차익 실현 매물이 쏟아지며 가격이 조정될 확률이 높으므로 추가 매수를 절대 삼가고 보유 비중의 일부를 익절(분할 매도)하여 현금을 챙기길 권장합니다.';
-                } else if (item.signal === 'REBALANCED') {
-                    badgeClass = 'rebalanced';
-                    badgeLabel = '매수시그널 (BUY)';
-                    actionGuide = '고점 대비 강한 하락 충격을 모두 소화하고 드디어 저점 조정을 완수했습니다! 기술적 반등 가능성이 70%를 상회하는 매수 적기이므로, 현금 여력이 있다면 하락 시 분할 매수로 신규 진입하기 가장 좋은 타이밍입니다.';
+                if (item.signal === 'STRONG_SELL') {
+                    actionGuide = '극단적 과열 상태입니다! 보유 비중의 절반 이상을 즉시 익절하고 현금 확보를 강력히 권고합니다.';
+                } else if (item.signal === 'OVERHEAT') {
+                    actionGuide = '고점 근처에서 거래가 달아오르고 있습니다. 분할 익절을 시작하여 이익을 일부 실현하세요.';
+                } else if (item.signal === 'CAUTION') {
+                    actionGuide = '상승 탄력이 소진되는 경계 구간입니다. 추가 매수를 자제하고 현 포지션을 관망하세요.';
+                } else if (item.signal === 'MILD_BUY') {
+                    actionGuide = '소폭 눌림목 진입 구간입니다. 관심을 갖고 소량 분할 매수를 천천히 시작해 볼 수 있습니다.';
+                } else if (item.signal === 'BUY') {
+                    actionGuide = '저점 진입 적기입니다! 분할 매수로 신규 진입하기 좋은 타이밍입니다.';
+                } else if (item.signal === 'STRONG_BUY') {
+                    actionGuide = '극단적 저점 신호입니다. 현금 여력을 적극 활용하여 분할 매수 진입을 강력 추천합니다!';
                 }
 
                 const priceFormatted = Math.floor(item.close).toLocaleString() + '원';
@@ -512,6 +521,20 @@
             }
         });
 
+        // 7단계 신호 → 뱃지 레이블 & CSS 클래스 변환 헬퍼
+        function getSignalBadge(signal) {
+            const MAP = {
+                'STRONG_SELL': { badgeClass: 'strong-sell', badgeLabel: '🔴 강력매도' },
+                'OVERHEAT':    { badgeClass: 'overheat',    badgeLabel: '🟠 익절권장' },
+                'CAUTION':     { badgeClass: 'caution',     badgeLabel: '🟡 경계관망' },
+                'HOLD':        { badgeClass: 'hold',        badgeLabel: '⚪ 중립대기' },
+                'MILD_BUY':    { badgeClass: 'mild-buy',   badgeLabel: '🩵 관심매집' },
+                'BUY':         { badgeClass: 'buy',         badgeLabel: '🟢 매수시그널' },
+                'STRONG_BUY':  { badgeClass: 'strong-buy', badgeLabel: '💚 강력매수' },
+            };
+            return MAP[signal] || { badgeClass: 'hold', badgeLabel: '⚪ 중립대기' };
+        }
+
         // 전역 데이터 캐시
         let cachedSignals = [];
 
@@ -536,24 +559,14 @@
                             <th>종목명 (티커)</th>
                             <th>현재가 (대비)</th>
                             <th class="tooltip" data-tooltip="최근 가격이 평소보다 얼마나 비정상적으로 많이 오르거나 내렸는지 보여주는 '온도계'입니다. Z점수가 2.0 이상이면 뜨겁게 달아오른 과열 상태, -2.0 이하면 너무 차갑게 억눌려 반등이 가까워진 상태를 뜻해요!">Z-Score</th>
-                            <th class="tooltip" data-tooltip="변동성을 보고 내리는 투자 나침반 지침입니다.&#10;&#10;• 과열주의: 너무 비싸니 주식을 조금씩 팔아 현금을 챙기세요.&#10;• 매수시그널: 충분히 싸졌으니 이제 분할로 살 타이밍입니다.&#10;• 대기: 일단은 움직이지 않고 평온하게 홀딩하는 구간입니다.">리밸런싱 신호</th>
+                            <th class="tooltip" data-tooltip="변동성을 기반으로 AI가 판단한 7단계 투자 나침반 지침입니다.&#10;&#10;🔴 강력매도: Z≥2.5 극단 과열, 절반 이상 즉시 익절&#10;🟠 익절권장: Z≥1.8 고점 근접, 분할 익절 시작&#10;🟡 경계관망: Z≥1.0 상승 탄력 소진, 추가 매수 자제&#10;⚪ 중립대기: Z±1.0 내외, 현 포지션 유지&#10;🩵 관심매집: Z≤-1.0 소폭 눌림목, 소량 분할 매수&#10;🟢 매수시그널: Z≤-1.8 저점 진입 적기, 적극 매수&#10;💚 강력매수: Z≤-2.5 극단 저점, 최대 비중 투입">리밸런싱 신호</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
 
             cachedSignals.forEach(item => {
-                let badgeClass = 'hold';
-                let badgeLabel = '대기 (HOLD)';
-
-                if (item.signal === 'OVERHEAT' || item.signal === 'OVERHEATED_HOLD') {
-                    badgeClass = 'overheat';
-                    badgeLabel = '과열주의';
-                } else if (item.signal === 'REBALANCED') {
-                    badgeClass = 'rebalanced';
-                    badgeLabel = '매수시그널';
-                }
-
+                const { badgeClass, badgeLabel } = getSignalBadge(item.signal);
                 const priceFormatted = Math.floor(item.close).toLocaleString() + '원';
 
                 tableHtml += `
@@ -620,9 +633,9 @@
                 cachedSignals.forEach(item => {
                     if (item.ticker === '^KS11') {
                         kospiIndexInfo = item;
-                    } else if (item.signal === 'OVERHEAT' || item.signal === 'OVERHEATED_HOLD') {
+                    } else if (item.signal === 'STRONG_SELL' || item.signal === 'OVERHEAT') {
                         sellList.push(item);
-                    } else if (item.signal === 'REBALANCED') {
+                    } else if (item.signal === 'STRONG_BUY' || item.signal === 'BUY' || item.signal === 'MILD_BUY') {
                         buyList.push(item);
                     }
                 });

@@ -58,27 +58,25 @@ TICKERS = {
 
 def fetch_market_data(period: str = "3mo") -> Dict[str, pd.DataFrame]:
     """
-    정의된 모든 티커에 대해 야후 파이낸스로부터 지정된 기간의 일봉 데이터를 수집합니다.
+    정의된 모든 티커에 대해 야후 파이낸스로부터 지정된 기간의 일봉 데이터를 개별 수집합니다.
+    (교착 상태 방지 및 타임아웃 처리가 강력한 개별 수집 루프 적용)
     """
     tickers_list = list(TICKERS.keys())
-    print(f"[*] {len(tickers_list)}개 종목 시세 데이터 수집 시작 (기간: {period})...")
+    print(f"[*] {len(tickers_list)}개 종목 시세 데이터 개별 수집 시작 (기간: {period})...")
     
-    # yfinance를 사용하여 데이터를 일괄 다운로드 (병렬 다운로드 자동 활성화)
-    try:
-        data = yf.download(tickers_list, period=period, group_by="ticker", progress=False)
-    except Exception as e:
-        print(f"[!] 데이터 수집 실패: {e}")
-        return {}
-
     market_data = {}
     for ticker in tickers_list:
         try:
-            if ticker in data.columns.levels[0]:
-                ticker_df = data[ticker].dropna(subset=["Close"])
-                if not ticker_df.empty:
-                    market_data[ticker] = ticker_df
+            # 개별 종목 정보 수집 (타임아웃 3초 제한)
+            ticker_obj = yf.Ticker(ticker)
+            df = ticker_obj.history(period=period, timeout=3)
+            if df is not None and not df.empty:
+                # 불필요한 null값 정제
+                df_cleaned = df.dropna(subset=["Close"])
+                if not df_cleaned.empty:
+                    market_data[ticker] = df_cleaned
         except Exception as e:
-            print(f"[!] {ticker} 데이터 파싱 에러: {e}")
+            print(f"[!] {ticker} 수집 실패: {e}")
             
     print(f"[*] 데이터 수집 완료 (성공: {len(market_data)}/{len(tickers_list)} 종목)")
     return market_data

@@ -1,5 +1,22 @@
 # Version History
 
+## v1.0.3
+
+Date: 2026-07-07
+
+### 변경 내용
+
+* VS Code 멀티 워크스페이스 구조에서의 경로 해석 오류 해결 (`.vscode/settings.json` 내 인터프리터 경로를 완전 절대 경로인 `/Users/l/project/goKOSPI/venv/bin/python`으로 고정)
+
+### 수정 파일
+
+* .vscode/settings.json
+* ver.md
+
+### 비고
+
+* 절대 경로 적용을 통한 인터프리터 해소 완료
+
 ## v1.0.2
 
 Date: 2026-07-07

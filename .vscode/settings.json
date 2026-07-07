@@ -1,5 +1,5 @@
 {
-  "python.defaultInterpreterPath": "./venv/bin/python",
+  "python.defaultInterpreterPath": "/Users/l/project/goKOSPI/venv/bin/python",
   "python.analysis.extraPaths": [
     "${workspaceFolder}"
   ]

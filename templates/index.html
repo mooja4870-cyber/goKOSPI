@@ -286,7 +286,14 @@
         <!-- 50대 우량주 상태 리스트 -->
         <div class="detail-panel">
             <div class="card">
-                <div class="card-title">🔍 KOSPI 50대 우량주 스캐너 전체보기</div>
+                <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>🔍 KOSPI 50대 우량주 스캐너 전체보기</span>
+                    <select id="sort-select" onchange="handleSortChange()" style="background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.8rem; cursor: pointer; outline: none;">
+                        <option value="market_cap">시총 순으로 보기</option>
+                        <option value="change_pct">상승률 순으로 보기</option>
+                        <option value="z_score">과열도(Z-Score) 순으로 보기</option>
+                    </select>
+                </div>
                 <div id="full-scanner-list">
                     <div class="spinner"></div>
                 </div>
@@ -311,6 +318,82 @@
     </div>
 
     <script>
+        // 전역 데이터 캐시
+        let cachedSignals = [];
+
+        // 수치 포맷 세이프가드 유틸리티 함수
+        function formatZScore(val, precision = 2) {
+            const num = parseFloat(val);
+            return isNaN(num) ? '0.00'.substring(0, precision + 2) : num.toFixed(precision);
+        }
+
+        // 스캐너 테이블 렌더링 전담 함수
+        function renderScannerTable() {
+            const scannerEl = document.getElementById('full-scanner-list');
+            if (cachedSignals.length === 0) {
+                scannerEl.innerHTML = '<div class="empty-message">데이터가 존재하지 않습니다.</div>';
+                return;
+            }
+
+            let tableHtml = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>종목명 (티커)</th>
+                            <th>현재가 (대비)</th>
+                            <th>Z-Score</th>
+                            <th>리밸런싱 신호</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            cachedSignals.forEach(item => {
+                let badgeClass = 'hold';
+                let badgeLabel = '대기 (HOLD)';
+
+                if (item.signal === 'OVERHEAT' || item.signal === 'OVERHEATED_HOLD') {
+                    badgeClass = 'overheat';
+                    badgeLabel = '과열주의';
+                } else if (item.signal === 'REBALANCED') {
+                    badgeClass = 'rebalanced';
+                    badgeLabel = '매수시그널';
+                }
+
+                const priceFormatted = Math.floor(item.close).toLocaleString() + '원';
+
+                tableHtml += `
+                    <tr>
+                        <td><strong>${item.name}</strong> <span style="font-size: 0.75rem; color: var(--text-secondary);">${item.ticker.split('.')[0]}</span></td>
+                        <td>${priceFormatted} <span style="font-size: 0.75rem; color: ${item.change_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${item.change_pct >= 0 ? '+' : ''}${item.change_pct.toFixed(2)}%</span></td>
+                        <td style="font-weight: bold;">${formatZScore(item.z_score)}</td>
+                        <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `</tbody></table>`;
+            scannerEl.innerHTML = tableHtml;
+        }
+
+        // 정렬 이벤트 핸들러
+        function handleSortChange() {
+            const sortBy = document.getElementById('sort-select').value;
+            
+            if (sortBy === 'market_cap') {
+                // 시가총액 순서 (최초 수집 인덱스 기준 오름차순)
+                cachedSignals.sort((a, b) => a.original_index - b.original_index);
+            } else if (sortBy === 'change_pct') {
+                // 당일 변동률(상승률) 내림차순
+                cachedSignals.sort((a, b) => b.change_pct - a.change_pct);
+            } else if (sortBy === 'z_score') {
+                // 과열도(Z-Score) 절댓값 기준 내림차순
+                cachedSignals.sort((a, b) => Math.abs(b.z_score || 0) - Math.abs(a.z_score || 0));
+            }
+            
+            renderScannerTable();
+        }
+
         async function loadDashboard() {
             try {
                 // 1. 백테스트 개요 로드
@@ -334,7 +417,13 @@
                 const buyList = [];
                 let kospiIndexInfo = null;
 
-                signalData.data.forEach(item => {
+                // 원본 인덱스 매칭하여 캐시 데이터셋 수립
+                cachedSignals = signalData.data.map((item, idx) => ({
+                    ...item,
+                    original_index: idx
+                }));
+
+                cachedSignals.forEach(item => {
                     if (item.ticker === '^KS11') {
                         kospiIndexInfo = item;
                     } else if (item.signal === 'OVERHEAT' || item.signal === 'OVERHEATED_HOLD') {
@@ -353,7 +442,7 @@
                     if (z >= 2.0) {
                         marketTextEl.innerText = "🚨 시장 과열 경보";
                         marketTextEl.style.color = "var(--accent-red)";
-                        marketDescEl.innerHTML = `현재 코스피 종합 지수 Z-Score가 <strong>${z.toFixed(2)}</strong>로 매우 높습니다. 조만간 시장 전반에 강제 물량 조정이 개시될 확률이 80%를 상회하므로 현금 비중 확대를 권장합니다.`;
+                        marketDescEl.innerHTML = `현재 코스피 종합 지수 Z-Score가 <strong>${formatZScore(z)}</strong>로 매우 높습니다. 조만간 시장 전반에 강제 물량 조정이 개시될 확률이 80%를 상회하므로 현금 비중 확대를 권장합니다.`;
                     } else if (kospiIndexInfo.signal === 'OVERHEATED_HOLD') {
                         marketTextEl.innerText = "📉 조정 진행 중";
                         marketTextEl.style.color = "var(--accent-blue)";
@@ -361,7 +450,7 @@
                     } else {
                         marketTextEl.innerText = "⚖️ 안정적 중립 장세";
                         marketTextEl.style.color = "var(--accent-blue)";
-                        marketDescEl.innerHTML = `현재 지수 Z-Score는 <strong>${z.toFixed(2)}</strong>로 안전 권역입니다. 지수 충격 위험이 적으므로 개별 대형주의 개별 리밸런싱 위주로 자유롭게 진입이 가능합니다.`;
+                        marketDescEl.innerHTML = `현재 지수 Z-Score는 <strong>${formatZScore(z)}</strong>로 안전 권역입니다. 지수 충격 위험이 적으므로 개별 대형주의 개별 리밸런싱 위주로 자유롭게 진입이 가능합니다.`;
                     }
                 } else {
                     marketTextEl.innerText = "⚖️ 정상 안정 국면";
@@ -378,7 +467,7 @@
                         const li = document.createElement('li');
                         li.innerHTML = `
                             <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
-                            <span style="color:var(--accent-red); font-weight:bold;">과열 (Z: ${item.z_score.toFixed(1)}) → 익절 권장</span>
+                            <span style="color:var(--accent-red); font-weight:bold;">과열 (Z: ${formatZScore(item.z_score, 1)}) → 익절 권장</span>
                         `;
                         sellEl.appendChild(li);
                     });
@@ -400,47 +489,8 @@
                     });
                 }
 
-                // 4. 전체 리스트 렌더링
-                const scannerEl = document.getElementById('full-scanner-list');
-                let tableHtml = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>종목명 (티커)</th>
-                                <th>현재가 (대비)</th>
-                                <th>Z-Score</th>
-                                <th>리밸런싱 신호</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-
-                signalData.data.forEach(item => {
-                    let badgeClass = 'hold';
-                    let badgeLabel = '대기 (HOLD)';
-
-                    if (item.signal === 'OVERHEAT' || item.signal === 'OVERHEATED_HOLD') {
-                        badgeClass = 'overheat';
-                        badgeLabel = '과열주의';
-                    } else if (item.signal === 'REBALANCED') {
-                        badgeClass = 'rebalanced';
-                        badgeLabel = '매수시그널';
-                    }
-
-                    const priceFormatted = Math.floor(item.close).toLocaleString() + '원';
-
-                    tableHtml += `
-                        <tr>
-                            <td><strong>${item.name}</strong> <span style="font-size: 0.75rem; color: var(--text-secondary);">${item.ticker.split('.')[0]}</span></td>
-                            <td>${priceFormatted} <span style="font-size: 0.75rem; color: ${item.change_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${item.change_pct >= 0 ? '+' : ''}${item.change_pct.toFixed(2)}%</span></td>
-                            <td style="font-weight: bold;">${item.z_score.toFixed(2)}</td>
-                            <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
-                        </tr>
-                    `;
-                });
-
-                tableHtml += `</tbody></table>`;
-                scannerEl.innerHTML = tableHtml;
+                // 4. 셀렉트 박스의 현재 선택된 정렬에 맞춰 렌더링
+                handleSortChange();
 
             } catch (err) {
                 console.error("데이터 로딩 에러:", err);

@@ -27,6 +27,13 @@ def update_signal_cache_worker():
                 for ticker, df in market_data.items():
                     analysis = analyze_last_signal(df, ticker)
                     analysis["name"] = get_ticker_name(ticker)
+                    
+                    # NaN 값 안전 정제 (JSON 직렬화 및 프론트엔드 오류 방지)
+                    import math
+                    z = analysis.get("z_score", 0.0)
+                    if math.isnan(z):
+                        analysis["z_score"] = 0.0
+                        
                     temp_cache.append(analysis)
                 
                 # Z-Score 기준으로 내림차순 정렬

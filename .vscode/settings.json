@@ -1,6 +1,7 @@
 {
-  "python.defaultInterpreterPath": "/Users/l/project/goKOSPI/venv/bin/python",
+  "python.defaultInterpreterPath": "/opt/homebrew/bin/python3",
   "python.analysis.extraPaths": [
-    "${workspaceFolder}"
+    "${workspaceFolder}",
+    "/Users/l/project/goKOSPI/venv/lib/python3.14/site-packages"
   ]
 }

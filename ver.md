@@ -1,5 +1,22 @@
 # Version History
 
+## v1.0.4
+
+Date: 2026-07-07
+
+### 변경 내용
+
+* 가상환경 내 심볼릭 링크 해석 보안 제한에 따른 인터프리터 오류 해결 (`.vscode/settings.json` 내 인터프리터를 홈브루 시스템 파이썬 `/opt/homebrew/bin/python3`으로 지정하고 가상환경 패키지 폴더를 `extraPaths`에 수동 맵핑)
+
+### 수정 파일
+
+* .vscode/settings.json
+* ver.md
+
+### 비고
+
+* 시스템 파이썬 + 가상환경 extraPaths 연동으로 인터프리터 경고 최종 차단 완료
+
 ## v1.0.3
 
 Date: 2026-07-07

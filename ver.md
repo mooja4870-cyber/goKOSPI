@@ -1,5 +1,24 @@
 # Version History
 
+## v1.5.0
+
+Date: 2026-07-07
+
+### 변경 내용
+
+* 관심 종목 실시간 개별 신호 검색기(Quick Inspector) 추가 (`templates/index.html` 기능 추가)
+* 한글 초중성 가나다 자모음 정렬(`localeCompare`) 기반 자동완성 드롭 리스트 구현
+* 관심종목 클릭 시 Z-Score, 실시간 가격 대비 변동성, 세부 1줄 행동 가이드를 동적으로 카드 렌더링하는 진단 모듈 완성
+
+### 수정 파일
+
+* templates/index.html
+* ver.md
+
+### 비고
+
+* 검색형 신호 판독 위젯 연동 성공
+
 ## v1.4.2
 
 Date: 2026-07-07

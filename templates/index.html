@@ -387,7 +387,8 @@
     </div>
 
     <script>
-        // 검색 필터링 및 자동완성 팝업 함수
+        // 검색 필터링 및 자동완성 팝업 함수 (백엔드 전종목 검색 API 연동)
+        let searchTimeout = null;
         function filterSearchSuggestions() {
             const query = document.getElementById('ticker-search').value.trim();
             const suggestionsEl = document.getElementById('search-suggestions');
@@ -398,31 +399,36 @@
                 return;
             }
 
-            // 검색 키워드가 들어간 종목 필터링 (KOSPI 종합 지수 제외)
-            let matched = cachedSignals.filter(item => item.ticker !== '^KS11' && item.name.includes(query));
+            // 키보드 입력 시 API 호출 쓰로틀링 (부하 방지)
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/search_ticker?query=${encodeURIComponent(query)}`);
+                    const data = await res.json();
+                    
+                    if (data.length === 0) {
+                        suggestionsEl.innerHTML = '<li style="color:var(--text-secondary); cursor:default; text-align:left;">검색 결과가 없습니다.</li>';
+                        suggestionsEl.style.display = 'block';
+                        return;
+                    }
 
-            if (matched.length === 0) {
-                suggestionsEl.innerHTML = '<li style="color:var(--text-secondary); cursor:default; text-align:left;">검색 결과가 없습니다.</li>';
-                suggestionsEl.style.display = 'block';
-                return;
-            }
-
-            // 가나다 순(한글 자모음 정렬)으로 제안 정렬
-            matched.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-
-            // 제안 리스트 출력
-            suggestionsEl.innerHTML = '';
-            matched.forEach(item => {
-                const li = document.createElement('li');
-                li.innerText = `${item.name} (${item.ticker.split('.')[0]})`;
-                li.onclick = () => selectSearchTicker(item.ticker);
-                suggestionsEl.appendChild(li);
-            });
-            suggestionsEl.style.display = 'block';
+                    // 제안 리스트 출력 (백엔드가 이미 가나다 순 정렬하여 전송)
+                    suggestionsEl.innerHTML = '';
+                    data.forEach(item => {
+                        const li = document.createElement('li');
+                        li.innerText = `${item.name} (${item.ticker.split('.')[0]})`;
+                        li.onclick = () => selectSearchTicker(item.ticker, item.name);
+                        suggestionsEl.appendChild(li);
+                    });
+                    suggestionsEl.style.display = 'block';
+                } catch (err) {
+                    console.error("종목 검색 실패:", err);
+                }
+            }, 150); // 150ms 딜레이
         }
 
-        // 종목 선택 후 상세 진단 판독 기능
-        function selectSearchTicker(ticker) {
+        // 종목 선택 후 실시간 야후파이낸스 진단 판독 기능 (백엔드 실시간 스캔 API 연동)
+        async function selectSearchTicker(ticker, name) {
             const suggestionsEl = document.getElementById('search-suggestions');
             const searchInput = document.getElementById('ticker-search');
             const inspectorEl = document.getElementById('search-result-inspector');
@@ -431,52 +437,70 @@
             suggestionsEl.style.display = 'none';
             suggestionsEl.innerHTML = '';
             
-            const item = cachedSignals.find(x => x.ticker === ticker);
-            if (!item) return;
+            searchInput.value = name;
 
-            searchInput.value = item.name;
-
-            // 뱃지 및 설명 생성
-            let badgeClass = 'hold';
-            let badgeLabel = '대기 (HOLD)';
-            let actionGuide = '현재 평온한 관망(HOLD) 상태입니다. 굳이 비싸게 사거나 싸게 팔 이유가 없으므로 기존 포지션을 차분히 유지하며 주가 흐름을 관찰하세요.';
-
-            if (item.signal === 'OVERHEAT' || item.signal === 'OVERHEATED_HOLD') {
-                badgeClass = 'overheat';
-                badgeLabel = '과열주의 (SELL)';
-                actionGuide = '주가가 단기 급등하여 심한 과열권에 진입했습니다! 조만간 차익 실현 매물이 쏟아지며 가격이 조정될 확률이 높으므로 추가 매수를 절대 삼가고 보유 비중의 일부를 익절(분할 매도)하여 현금을 챙기길 권장합니다.';
-            } else if (item.signal === 'REBALANCED') {
-                badgeClass = 'rebalanced';
-                badgeLabel = '매수시그널 (BUY)';
-                actionGuide = '고점 대비 강한 하락 충격을 모두 소화하고 드디어 저점 조정을 완수했습니다! 기술적 반등 가능성이 70%를 상회하는 매수 적기이므로, 현금 여력이 있다면 하락 시 분할 매수로 신규 진입하기 가장 좋은 타이밍입니다.';
-            }
-
-            const priceFormatted = Math.floor(item.close).toLocaleString() + '원';
-            const pctFormatted = (item.change_pct >= 0 ? '+' : '') + item.change_pct.toFixed(2) + '%';
-            const pctColor = item.change_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-
-            // 결과 뷰 업데이트
+            // 로딩 상태 표시
             inspectorEl.innerHTML = `
-                <div style="width:100%; text-align:left;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                        <span style="font-size:1.25rem; font-weight:700;">${item.name} <span style="font-size:0.8rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
-                        <span class="badge ${badgeClass}" style="font-size:0.8rem; padding:0.3rem 0.6rem;">${badgeLabel}</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:0.8rem;">
-                        <div>
-                            <span style="font-size:0.8rem; color:var(--text-secondary);">현재가</span>
-                            <div style="font-size:1.1rem; font-weight:700; margin-top:0.2rem;">${priceFormatted} <span style="font-size:0.8rem; color:${pctColor}; font-weight:normal;">${pctFormatted}</span></div>
-                        </div>
-                        <div style="text-align:right;">
-                            <span class="tooltip" style="font-size:0.8rem; color:var(--text-secondary);" data-tooltip="최근 가격이 평소보다 얼마나 비정상적으로 많이 오르거나 내렸는지 보여주는 온도계입니다. Z점수가 2.0 이상이면 과열 상태, -2.0 이하면 조정 완료를 뜻해요!">Z-Score ❓</span>
-                            <div style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-top:0.2rem;">${formatZScore(item.z_score)}</div>
-                        </div>
-                    </div>
-                    <div style="font-size:0.85rem; line-height:1.6; color:var(--text-primary);">
-                        <strong>💡 투자 판단 지침:</strong> <span style="color:#dcdfe6;">${actionGuide}</span>
-                    </div>
-                </div>
+                <div class="spinner" style="margin: 1rem auto;"></div>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.5rem;">
+                    '${name}' 시세 분석 중...<br>(야후 파이낸스 실시간 수집 연산에 1~3초 소요)
+                </p>
             `;
+
+            try {
+                const res = await fetch(`/api/inspect_ticker?ticker=${encodeURIComponent(ticker)}`);
+                const item = await res.json();
+
+                if (!item.success) {
+                    inspectorEl.innerHTML = `<span style="color:var(--accent-red); font-size:0.88rem; line-height:1.6;">진단 오류:<br>${item.error}</span>`;
+                    return;
+                }
+
+                // 뱃지 및 설명 생성
+                let badgeClass = 'hold';
+                let badgeLabel = '대기 (HOLD)';
+                let actionGuide = '현재 평온한 관망(HOLD) 상태입니다. 굳이 비싸게 사거나 싸게 팔 이유가 없으므로 기존 포지션을 차분히 유지하며 주가 흐름을 관찰하세요.';
+
+                if (item.signal === 'OVERHEAT' || item.signal === 'OVERHEATED_HOLD') {
+                    badgeClass = 'overheat';
+                    badgeLabel = '과열주의 (SELL)';
+                    actionGuide = '주가가 단기 급등하여 심한 과열권에 진입했습니다! 조만간 차익 실현 매물이 쏟아지며 가격이 조정될 확률이 높으므로 추가 매수를 절대 삼가고 보유 비중의 일부를 익절(분할 매도)하여 현금을 챙기길 권장합니다.';
+                } else if (item.signal === 'REBALANCED') {
+                    badgeClass = 'rebalanced';
+                    badgeLabel = '매수시그널 (BUY)';
+                    actionGuide = '고점 대비 강한 하락 충격을 모두 소화하고 드디어 저점 조정을 완수했습니다! 기술적 반등 가능성이 70%를 상회하는 매수 적기이므로, 현금 여력이 있다면 하락 시 분할 매수로 신규 진입하기 가장 좋은 타이밍입니다.';
+                }
+
+                const priceFormatted = Math.floor(item.close).toLocaleString() + '원';
+                const pctFormatted = (item.change_pct >= 0 ? '+' : '') + item.change_pct.toFixed(2) + '%';
+                const pctColor = item.change_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+
+                // 결과 뷰 업데이트
+                inspectorEl.innerHTML = `
+                    <div style="width:100%; text-align:left;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                            <span style="font-size:1.25rem; font-weight:700;">${item.name} <span style="font-size:0.8rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
+                            <span class="badge ${badgeClass}" style="font-size:0.8rem; padding:0.3rem 0.6rem;">${badgeLabel}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:0.8rem;">
+                            <div>
+                                <span style="font-size:0.8rem; color:var(--text-secondary);">현재가</span>
+                                <div style="font-size:1.1rem; font-weight:700; margin-top:0.2rem;">${priceFormatted} <span style="font-size:0.8rem; color:${pctColor}; font-weight:normal;">${pctFormatted}</span></div>
+                            </div>
+                            <div style="text-align:right;">
+                                <span class="tooltip" style="font-size:0.8rem; color:var(--text-secondary);" data-tooltip="최근 가격이 평소보다 얼마나 비정상적으로 많이 오르거나 내렸는지 보여주는 온도계입니다. Z점수가 2.0 이상이면 과열 상태, -2.0 이하면 조정 완료를 뜻해요!">Z-Score ❓</span>
+                                <div style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-top:0.2rem;">${formatZScore(item.z_score)}</div>
+                            </div>
+                        </div>
+                        <div style="font-size:0.85rem; line-height:1.6; color:var(--text-primary);">
+                            <strong>💡 투자 판단 지침:</strong> <span style="color:#dcdfe6;">${actionGuide}</span>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                console.error("상세 진단 조회 실패:", err);
+                inspectorEl.innerHTML = `<span style="color:var(--accent-red); font-size:0.88rem; line-height:1.6;">네트워크 장애 등으로 진단에 실패했습니다.</span>`;
+            }
         }
 
         // 포커스 아웃 시 자동완성 닫기 (딜레이를 주어 클릭 이벤트가 먼저 돌도록 조치)

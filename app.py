@@ -1,6 +1,9 @@
 import threading
 import time
-from flask import Flask, render_template, jsonify
+import math
+from flask import Flask, render_template, jsonify, request
+import FinanceDataReader as fdr
+import yfinance as yf
 from collector import fetch_market_data, get_ticker_name
 from engine import analyze_last_signal
 
@@ -10,6 +13,44 @@ app = Flask(__name__)
 signal_cache = []
 cache_lock = threading.Lock()
 is_loading = True
+
+# KRX 전 종목 리스트 캐시 (메모리 로딩)
+krx_stocks = []
+
+def init_krx_stocks():
+    """
+    FinanceDataReader를 통해 코스피/코스닥 전 종목 메타데이터를 가져와 로딩합니다.
+    """
+    global krx_stocks
+    try:
+        print("[*] KRX 전 종목 메타데이터 로딩 시작 (finance-datareader)...")
+        df = fdr.StockListing('KRX')
+        temp_stocks = []
+        for _, row in df.iterrows():
+            code = row.get('Code')
+            name = row.get('Name')
+            market = row.get('Market', '')
+            
+            if not code or not name:
+                continue
+                
+            # 야후 파이낸스용 티커 접미사 분기 매핑 (.KS / .KQ)
+            if 'KOSPI' in market:
+                ticker = f"{code}.KS"
+            elif 'KOSDAQ' in market:
+                ticker = f"{code}.KQ"
+            else:
+                ticker = f"{code}.KS"  # 기본값 KS
+                
+            temp_stocks.append({
+                "name": name,
+                "ticker": ticker
+            })
+        # 가나다 순 기본 정렬
+        krx_stocks = sorted(temp_stocks, key=lambda x: x["name"])
+        print(f"[*] KRX 전 종목 로딩 완료 (총 {len(krx_stocks)}개 종목 로드됨)")
+    except Exception as e:
+        print(f"[!] KRX 종목 로딩 실패: {e}")
 
 def update_signal_cache_worker():
     """
@@ -29,7 +70,6 @@ def update_signal_cache_worker():
                     analysis["name"] = get_ticker_name(ticker)
                     
                     # NaN 값 안전 정제 (JSON 직렬화 및 프론트엔드 오류 방지)
-                    import math
                     z = analysis.get("z_score", 0.0)
                     if math.isnan(z):
                         analysis["z_score"] = 0.0
@@ -65,9 +105,62 @@ def get_signals():
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
         })
 
+@app.route("/api/search_ticker")
+def search_ticker():
+    """
+    코스피/코스닥 전 종목명 검색 API
+    """
+    query = request.args.get("query", "").strip()
+    if not query:
+        return jsonify([])
+    
+    # 키워드가 들어간 종목들 검색 (최대 20개까지만 리턴하여 속도 및 사용성 극대화)
+    results = [s for s in krx_stocks if query.lower() in s["name"].lower()]
+    return jsonify(results[:20])
+
+@app.route("/api/inspect_ticker")
+def inspect_ticker():
+    """
+    특정 종목에 대해 실시간 다운로드 및 Z-Score 신호 분석 결과 제공 API
+    """
+    ticker = request.args.get("ticker", "").strip()
+    if not ticker:
+        return jsonify({"success": False, "error": "티커 파라미터가 누락되었습니다."})
+        
+    try:
+        # 야후 파이낸스에서 실시간 3개월 시세 다운로드 (타임아웃 4초)
+        ticker_obj = yf.Ticker(ticker)
+        df = ticker_obj.history(period="3mo", timeout=4)
+        
+        if df is None or df.empty:
+            return jsonify({"success": False, "error": f"{ticker}의 시세 데이터를 야후 파이낸스에서 찾을 수 없습니다."})
+            
+        df_cleaned = df.dropna(subset=["Close"])
+        if df_cleaned.empty:
+            return jsonify({"success": False, "error": f"{ticker}의 종가 데이터가 비어있습니다."})
+            
+        # 실시간 분석
+        analysis = analyze_last_signal(df_cleaned, ticker)
+        
+        # 종목명 역조회
+        name = ticker
+        match = next((s for s in krx_stocks if s["ticker"] == ticker), None)
+        if match:
+            name = match["name"]
+        analysis["name"] = name
+        
+        # NaN 값 정제
+        z = analysis.get("z_score", 0.0)
+        if math.isnan(z):
+            analysis["z_score"] = 0.0
+            
+        analysis["success"] = True
+        return jsonify(analysis)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 @app.route("/api/backtest_summary")
 def get_backtest_summary():
-    # 과거 백테스팅 대표 종목 성과 요약 데이터 정적 리턴 (백테스트 실행 시간이 10초 이상이므로)
     return jsonify({
         "success": True,
         "total_signals": 860,
@@ -85,10 +178,12 @@ def get_backtest_summary():
     })
 
 if __name__ == "__main__":
+    # KRX 종목 사전 로드
+    init_krx_stocks()
+    
     # 백그라운드 캐시 갱신 스레드 기동
     cache_thread = threading.Thread(target=update_signal_cache_worker, daemon=True)
     cache_thread.start()
     
     print("[*] goKOSPI 프리미엄 대시보드 웹 서버 기동 중... (Port: 9000)")
-    # 포트 9000으로 플라스크 웹 서버 실행
     app.run(host="0.0.0.0", port=9000, debug=False)

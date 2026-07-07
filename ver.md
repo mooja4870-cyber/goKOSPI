@@ -1,5 +1,26 @@
 # Version History
 
+## v1.6.0
+
+Date: 2026-07-07
+
+### 변경 내용
+
+* 관심 종목 검색 범위를 KOSPI 50대 대형주 한정에서 **코스피/코스닥 전 종목(2,500개 이상)으로 전격 확장**
+* `finance-datareader` 라이브러리를 추가 탑재하여 실시간 KRX 전 종목 데이터 연동 아키텍처 구축
+* 실시간 전 종목 자동완성 검색 API(`/api/search_ticker`) 및 실시간 개별 종목 시세 연산 진단 API(`/api/inspect_ticker`) 신설 및 적용
+
+### 수정 파일
+
+* app.py
+* templates/index.html
+* requirements.txt
+* ver.md
+
+### 비고
+
+* 코스피/코스닥 전 종목에 대한 실시간 Z-Score 진단 서비스 가동 완료
+
 ## v1.5.0
 
 Date: 2026-07-07

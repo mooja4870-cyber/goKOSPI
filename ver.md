@@ -1,5 +1,22 @@
 # Version History
 
+## v1.0.2
+
+Date: 2026-07-07
+
+### 변경 내용
+
+* VS Code 설정 변수 `${workspaceFolder}` 미인식 오류 해결 (`.vscode/settings.json` 내 인터프리터 경로를 상대 경로인 `./venv/bin/python`으로 변경)
+
+### 수정 파일
+
+* .vscode/settings.json
+* ver.md
+
+### 비고
+
+* VS Code 환경 변수 미해석 문제 조치 완료
+
 ## v1.0.1
 
 Date: 2026-07-07

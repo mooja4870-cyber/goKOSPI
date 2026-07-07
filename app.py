@@ -36,8 +36,10 @@ def update_signal_cache_worker():
                         
                     temp_cache.append(analysis)
                 
-                # Z-Score 기준으로 내림차순 정렬
-                temp_cache = sorted(temp_cache, key=lambda x: abs(x.get("z_score", 0)), reverse=True)
+                # 원래 TICKERS 정의 순서(시가총액 50대 종목 순위)대로 캐시 정렬
+                from collector import TICKERS
+                tickers_order = {ticker: idx for idx, ticker in enumerate(list(TICKERS.keys()) + ["^KS11"])}
+                temp_cache = sorted(temp_cache, key=lambda x: tickers_order.get(x["ticker"], 999))
                 
                 with cache_lock:
                     signal_cache = temp_cache

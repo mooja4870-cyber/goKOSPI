@@ -236,6 +236,42 @@
         }
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 중딩버전 툴팁 스타일 정의 */
+        .tooltip {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dotted var(--text-secondary);
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(12, 13, 18, 0.96);
+            color: var(--text-primary);
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            font-size: 0.76rem;
+            white-space: pre-wrap;
+            width: 260px;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            z-index: 999;
+            font-weight: normal;
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        .tooltip:hover::after {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -341,8 +377,8 @@
                         <tr>
                             <th>종목명 (티커)</th>
                             <th>현재가 (대비)</th>
-                            <th>Z-Score</th>
-                            <th>리밸런싱 신호</th>
+                            <th class="tooltip" data-tooltip="최근 가격이 평소보다 얼마나 비정상적으로 많이 오르거나 내렸는지 보여주는 '온도계'입니다. Z점수가 2.0 이상이면 뜨겁게 달아오른 과열 상태, -2.0 이하면 너무 차갑게 억눌려 반등이 가까워진 상태를 뜻해요!">Z-Score</th>
+                            <th class="tooltip" data-tooltip="변동성을 보고 내리는 투자 나침반 지침입니다.&#10;&#10;• 과열주의: 너무 비싸니 주식을 조금씩 팔아 현금을 챙기세요.&#10;• 매수시그널: 충분히 싸졌으니 이제 분할로 살 타이밍입니다.&#10;• 대기: 일단은 움직이지 않고 평온하게 홀딩하는 구간입니다.">리밸런싱 신호</th>
                         </tr>
                     </thead>
                     <tbody>

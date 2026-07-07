@@ -1,5 +1,22 @@
 # Version History
 
+## v1.0.5
+
+Date: 2026-07-07
+
+### 변경 내용
+
+* VS Code 내 파이썬 인터프리터 경로 수동 설정 무력화 현상 해결 (`.vscode/settings.json` 내 `"python.defaultInterpreterPath"` 키를 완전히 제거하여 VS Code 자체 시스템 자동 감지(Auto-detect) 알고리즘을 타도록 조치)
+
+### 수정 파일
+
+* .vscode/settings.json
+* ver.md
+
+### 비고
+
+* 인터프리터 자동 탐지 가이드 적용
+
 ## v1.0.4
 
 Date: 2026-07-07

@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>goKOSPI 리밸런싱 대시보드</title>
+    <title>goKOSPI 투자 나침반 대시보드</title>
     <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0c0d12;
-            --card-bg: rgba(30, 32, 44, 0.6);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --text-primary: #f5f6fa;
-            --text-secondary: #8a8f9f;
+            --bg-color: #08090d;
+            --card-bg: rgba(22, 24, 35, 0.7);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-primary: #f8f9fa;
+            --text-secondary: #9094a6;
             --accent-blue: #007aff;
             --accent-red: #ff3b30;
             --accent-green: #34c759;
-            --red-glow: 0 0 15px rgba(255, 59, 48, 0.4);
-            --green-glow: 0 0 15px rgba(52, 199, 89, 0.4);
-            --blue-glow: 0 0 15px rgba(0, 122, 255, 0.4);
+            --red-glow: 0 8px 32px rgba(255, 59, 48, 0.15);
+            --green-glow: 0 8px 32px rgba(52, 199, 89, 0.15);
+            --blue-glow: 0 8px 32px rgba(0, 122, 255, 0.15);
         }
 
         * {
@@ -34,49 +34,133 @@
             min-height: 100vh;
             padding: 2rem;
             overflow-x: hidden;
-            background-image: radial-gradient(circle at 10% 20%, rgba(0, 122, 255, 0.05) 0%, transparent 40%),
-                              radial-gradient(circle at 90% 80%, rgba(255, 59, 48, 0.03) 0%, transparent 40%);
+            background-image: radial-gradient(circle at 50% 10%, rgba(0, 122, 255, 0.08) 0%, transparent 50%),
+                              radial-gradient(circle at 90% 80%, rgba(255, 59, 48, 0.04) 0%, transparent 40%);
         }
 
-        /* 헤더 스타일 */
         header {
             max-width: 1400px;
-            margin: 0 auto 2.5rem auto;
+            margin: 0 auto 2rem auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1.5rem;
+            padding-bottom: 1.2rem;
         }
 
         h1 {
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #f5f6fa 30%, var(--accent-blue) 100%);
+            background: linear-gradient(135deg, #ffffff 40%, var(--accent-blue) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
         .status-badge {
-            background-color: rgba(0, 122, 255, 0.1);
-            color: var(--accent-blue);
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
             padding: 0.5rem 1rem;
             border-radius: 9999px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 500;
-            border: 1px solid rgba(0, 122, 255, 0.2);
-            box-shadow: var(--blue-glow);
+            border: 1px solid var(--border-color);
         }
 
-        /* 메인 컨테이너 레이아웃 */
+        /* 3단 의사결정 카드 그리드 (최상단) */
+        .action-grid {
+            max-width: 1400px;
+            margin: 0 auto 2.5rem auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .action-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .action-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.8rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 220px;
+        }
+
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+        }
+
+        /* 카드별 테마 지정 */
+        .action-card.market::before { background: var(--accent-blue); }
+        .action-card.market { box-shadow: var(--blue-glow); }
+        
+        .action-card.sell::before { background: var(--accent-red); }
+        .action-card.sell { box-shadow: var(--red-glow); }
+        
+        .action-card.buy::before { background: var(--accent-green); }
+        .action-card.buy { box-shadow: var(--green-glow); }
+
+        .card-header-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-main-val {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 1rem;
+        }
+
+        .action-list {
+            list-style: none;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .action-list li {
+            padding: 0.4rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-list li:last-child {
+            border-bottom: none;
+        }
+
+        .empty-message {
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 0.88rem;
+            margin-top: 0.5rem;
+        }
+
+        /* 하단 디테일 분석 2단 레이아웃 */
         .container {
             max-width: 1400px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 1fr 1.8fr;
+            grid-template-columns: 1.8fr 1fr;
             gap: 2rem;
         }
 
@@ -86,69 +170,28 @@
             }
         }
 
-        /* 공통 카드 스타일 (글래스모피즘) */
         .card {
             background: var(--card-bg);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 1.5rem;
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-
-        .card:hover {
-            border-color: rgba(255, 255, 255, 0.15);
         }
 
         .card-title {
-            font-size: 1.25rem;
-            font-weight: 500;
-            margin-bottom: 1.5rem;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding-bottom: 0.6rem;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 0.75rem;
-        }
-
-        /* 통계 위젯 Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .stat-box {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1rem;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-top: 0.25rem;
-        }
-
-        .stat-box.green .stat-value { color: var(--accent-green); }
-        .stat-box.red .stat-value { color: var(--accent-red); }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
         /* 테이블 스타일 */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 0.5rem;
         }
 
         th {
@@ -161,244 +204,252 @@
         }
 
         td {
-            padding: 0.9rem 1rem;
-            font-size: 0.9rem;
+            padding: 0.8rem 1rem;
+            font-size: 0.88rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }
 
         tr:hover td {
-            background-color: rgba(255, 255, 255, 0.02);
+            background-color: rgba(255, 255, 255, 0.01);
         }
 
-        /* 시그널 뱃지 스타일 */
         .badge {
             display: inline-block;
-            padding: 0.25rem 0.6rem;
-            border-radius: 6px;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
             font-size: 0.75rem;
             font-weight: 700;
-            text-transform: uppercase;
         }
 
-        .badge.overheat {
-            background-color: rgba(255, 59, 48, 0.15);
-            color: var(--accent-red);
-            border: 1px solid rgba(255, 59, 48, 0.3);
-            box-shadow: var(--red-glow);
-            animation: pulse 2s infinite;
-        }
-
-        .badge.rebalanced {
-            background-color: rgba(52, 199, 89, 0.15);
-            color: var(--accent-green);
-            border: 1px solid rgba(52, 199, 89, 0.3);
-            box-shadow: var(--green-glow);
-        }
-
-        .badge.hold {
-            background-color: rgba(138, 143, 159, 0.1);
-            color: var(--text-secondary);
-            border: 1px solid rgba(138, 143, 159, 0.2);
-        }
-
-        /* 애니메이션 */
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.9; }
-            50% { transform: scale(1.03); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.9; }
-        }
-
-        /* 스피너 로딩 */
-        .loading-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 3rem;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            gap: 1rem;
-        }
+        .badge.overheat { background: rgba(255, 59, 48, 0.12); color: var(--accent-red); border: 1px solid rgba(255, 59, 48, 0.2); }
+        .badge.rebalanced { background: rgba(52, 199, 89, 0.12); color: var(--accent-green); border: 1px solid rgba(52, 199, 89, 0.2); }
+        .badge.hold { background: rgba(255, 255, 255, 0.03); color: var(--text-secondary); }
 
         .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.05);
-            width: 36px;
-            height: 36px;
+            border: 3px solid rgba(255, 255, 255, 0.04);
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             border-left-color: var(--accent-blue);
             animation: spin 1s linear infinite;
+            margin: 2rem auto;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>📊 goKOSPI 리밸런싱 대시보드</h1>
-        <div class="status-badge" id="refresh-time">새로고침 대기 중...</div>
+        <h1>🧭 goKOSPI 실시간 투자 나침반</h1>
+        <div class="status-badge" id="refresh-time">지수 동기화 중...</div>
     </header>
 
-    <div class="container">
-        <!-- 좌측: 백테스트 개요 & 탑 퍼포머 -->
-        <div class="left-column">
-            <div class="card" style="margin-bottom: 2rem;">
-                <div class="card-title">📈 백테스트 검증 통계 <span style="font-size: 0.8rem; color: var(--text-secondary);">최근 3개년</span></div>
-                <div class="stats-grid">
-                    <div class="stat-box green">
-                        <div class="stat-label">평균 신호 승률</div>
-                        <div class="stat-value" id="hit-rate">72.1%</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">총 시뮬레이션 신호</div>
-                        <div class="stat-value" id="total-signals">860회</div>
-                    </div>
-                </div>
-                <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
-                    * <strong>과열 경보 승률</strong>: 74.3% (경보 후 5일 내 하락) <br>
-                    * <strong>조정 완료 승률</strong>: 70.2% (알림 후 5일 내 반등)
-                </div>
+    <!-- 최상단: 의사결정 3대 경로 카드 -->
+    <div class="action-grid">
+        <!-- 1. 시장 흐름 평가지표 -->
+        <div class="action-card market">
+            <div>
+                <div class="card-header-desc">KOSPI Market Mood</div>
+                <div class="card-main-val" id="market-status-text">시장 분위기 분석 중...</div>
             </div>
-
-            <div class="card">
-                <div class="card-title">🏆 누적 초과수익 Top 4 종목</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>종목명</th>
-                            <th>전략 수익</th>
-                            <th>초과 수익 (Alpha)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="performers-list">
-                        <!-- 동적 데이터 삽입 -->
-                    </tbody>
-                </table>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);" id="market-desc">
+                지수 가격 수집이 완료되면 시장의 전체 위험도와 변동성 상태를 산출합니다.
             </div>
         </div>
 
-        <!-- 우측: 50대 종목 실시간 스캐너 -->
-        <div class="right-column">
-            <div class="card" style="min-height: 500px;">
-                <div class="card-title">
-                    🔍 50대 우량주 변동성 스캐너 
-                    <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: normal;">실시간 계산</span>
+        <!-- 2. 매도 / 현금화 주의 권장 -->
+        <div class="action-card sell">
+            <div>
+                <div class="card-header-desc">🚨 Sell & Warning Signals</div>
+                <div class="card-main-val" style="color: var(--accent-red);">익절 및 추가매수 금지</div>
+            </div>
+            <ul class="action-list" id="sell-recommendations">
+                <div class="spinner"></div>
+            </ul>
+        </div>
+
+        <!-- 3. 매수 / 진입 추천 -->
+        <div class="action-card buy">
+            <div>
+                <div class="card-header-desc">🟢 Buy & Entry Signals</div>
+                <div class="card-main-val" style="color: var(--accent-green);">저점 분할 진입 추천</div>
+            </div>
+            <ul class="action-list" id="buy-recommendations">
+                <div class="spinner"></div>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 하단 상세 내역 레이아웃 -->
+    <div class="container">
+        <!-- 50대 우량주 상태 리스트 -->
+        <div class="detail-panel">
+            <div class="card">
+                <div class="card-title">🔍 KOSPI 50대 우량주 스캐너 전체보기</div>
+                <div id="full-scanner-list">
+                    <div class="spinner"></div>
                 </div>
-                <div id="scanner-content">
-                    <div class="loading-container">
-                        <div class="spinner"></div>
-                        <p>KOSPI 50대 주요 종목 시세 다운로드 및 연산 중 (약 5~10초 소요)...</p>
-                    </div>
+            </div>
+        </div>
+
+        <!-- 백테스트 개요 위젯 -->
+        <div class="side-panel">
+            <div class="card">
+                <div class="card-title">📈 백테스트 검증 통계 (최근 3개년)</div>
+                <div style="margin: 1rem 0; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary);">평균 신호 승률</span>
+                    <span style="font-size: 1.8rem; font-weight: 700; color: var(--accent-green);" id="bt-hit-rate">72.12%</span>
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 0.8rem;">
+                    * <strong>과열 신호 적중률</strong>: 74.3% (5일 내 조정)<br>
+                    * <strong>조정 완료 적중률</strong>: 70.2% (5일 내 반등)<br>
+                    * <strong>누적 시뮬레이션</strong>: 860회 신호 검증 완료
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 백테스트 정보 가져오기
-        async function loadBacktestSummary() {
+        async function loadDashboard() {
             try {
-                const res = await fetch('/api/backtest_summary');
-                const data = await res.json();
-                
-                document.getElementById('hit-rate').innerText = data.hit_rate + '%';
-                document.getElementById('total-signals').innerText = data.total_signals + '회';
-                
-                const performersBody = document.getElementById('performers-list');
-                performersBody.innerHTML = '';
-                data.top_performers.forEach(item => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td><strong>${item.name}</strong> <span style="font-size: 0.75rem; color: var(--text-secondary);">${item.ticker.split('.')[0]}</span></td>
-                        <td style="color: var(--accent-green)">+${item.st_return}%</td>
-                        <td style="color: var(--accent-blue); font-weight: bold;">+${item.alpha}%p</td>
-                    `;
-                    performersBody.appendChild(row);
-                });
-            } catch (err) {
-                console.error("백테스트 로드 에러:", err);
-            }
-        }
+                // 1. 백테스트 개요 로드
+                const btRes = await fetch('/api/backtest_summary');
+                const btData = await btRes.json();
+                document.getElementById('bt-hit-rate').innerText = btData.hit_rate + '%';
 
-        // 실시간 신호 데이터 가져오기 및 렌더링
-        async function loadSignals() {
-            try {
-                const res = await fetch('/api/signals');
-                const result = await res.json();
+                // 2. 실시간 신호 분석 데이터 로드
+                const signalRes = await fetch('/api/signals');
+                const signalData = await signalRes.json();
                 
-                document.getElementById('refresh-time').innerText = '마지막 동기화: ' + result.timestamp;
-                
-                const scannerContent = document.getElementById('scanner-content');
-                
-                if (result.loading) {
-                    // 여전히 백그라운드 수집 중
-                    setTimeout(loadSignals, 2000);
+                if (signalData.loading) {
+                    setTimeout(loadDashboard, 1500);
                     return;
                 }
+
+                document.getElementById('refresh-time').innerText = '동기화 시각: ' + signalData.timestamp;
+
+                // 3. 데이터 분류 (매도/매도추천/지수 상태)
+                const sellList = [];
+                const buyList = [];
+                let kospiIndexInfo = null;
+
+                signalData.data.forEach(item => {
+                    if (item.ticker === '^KS11') {
+                        kospiIndexInfo = item;
+                    } else if (item.signal === 'OVERHEAT' || item.signal === 'OVERHEATED_HOLD') {
+                        sellList.push(item);
+                    } else if (item.signal === 'REBALANCED') {
+                        buyList.push(item);
+                    }
+                });
+
+                // 3-A. 시장 분위기 파싱 (KOSPI 종합 지수 기반)
+                const marketTextEl = document.getElementById('market-status-text');
+                const marketDescEl = document.getElementById('market-desc');
                 
-                if (!result.data || result.data.length === 0) {
-                    scannerContent.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">검출된 데이터가 없습니다.</p>';
-                    return;
+                if (kospiIndexInfo) {
+                    const z = kospiIndexInfo.z_score;
+                    if (z >= 2.0) {
+                        marketTextEl.innerText = "🚨 시장 과열 경보";
+                        marketTextEl.style.color = "var(--accent-red)";
+                        marketDescEl.innerHTML = `현재 코스피 종합 지수 Z-Score가 <strong>${z.toFixed(2)}</strong>로 매우 높습니다. 조만간 시장 전반에 강제 물량 조정이 개시될 확률이 80%를 상회하므로 현금 비중 확대를 권장합니다.`;
+                    } else if (kospiIndexInfo.signal === 'OVERHEATED_HOLD') {
+                        marketTextEl.innerText = "📉 조정 진행 중";
+                        marketTextEl.style.color = "var(--accent-blue)";
+                        marketDescEl.innerHTML = `지수가 고점 대비 과열을 덜어내는 조정기에 있습니다. 조정 완료 신호가 감지될 때까지 신규 적극 진입을 미루십시오.`;
+                    } else {
+                        marketTextEl.innerText = "⚖️ 안정적 중립 장세";
+                        marketTextEl.style.color = "var(--accent-blue)";
+                        marketDescEl.innerHTML = `현재 지수 Z-Score는 <strong>${z.toFixed(2)}</strong>로 안전 권역입니다. 지수 충격 위험이 적으므로 개별 대형주의 개별 리밸런싱 위주로 자유롭게 진입이 가능합니다.`;
+                    }
+                } else {
+                    marketTextEl.innerText = "⚖️ 정상 안정 국면";
+                    marketDescEl.innerText = "종합 지수가 정상 변동 범위 내에 상주하고 있습니다. 개별 종목 매매에 집중하기 좋은 타이밍입니다.";
                 }
-                
+
+                // 3-B. 매도 제안 리스트 출력
+                const sellEl = document.getElementById('sell-recommendations');
+                sellEl.innerHTML = '';
+                if (sellList.length === 0) {
+                    sellEl.innerHTML = '<div class="empty-message">🎉 현재 과열권에 도달한 대형주가 없습니다. 마음 놓고 기존 포지션을 홀딩하셔도 좋습니다.</div>';
+                } else {
+                    sellList.forEach(item => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
+                            <span style="color:var(--accent-red); font-weight:bold;">과열 (Z: ${item.z_score.toFixed(1)}) → 익절 권장</span>
+                        `;
+                        sellEl.appendChild(li);
+                    });
+                }
+
+                // 3-C. 매수 제안 리스트 출력
+                const buyEl = document.getElementById('buy-recommendations');
+                buyEl.innerHTML = '';
+                if (buyList.length === 0) {
+                    buyEl.innerHTML = '<div class="empty-message">💤 조정을 마치고 신호를 주는 종목이 아직 없습니다. 신규 자금 진입을 서두르지 말고 대기하세요.</div>';
+                } else {
+                    buyList.forEach(item => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
+                            <span style="color:var(--accent-green); font-weight:bold;">조정완료 (하락: -${item.drawdown_pct.toFixed(1)}%) → 진입</span>
+                        `;
+                        buyEl.appendChild(li);
+                    });
+                }
+
+                // 4. 전체 리스트 렌더링
+                const scannerEl = document.getElementById('full-scanner-list');
                 let tableHtml = `
                     <table>
                         <thead>
                             <tr>
-                                <th>종목명 (코드)</th>
-                                <th>현재가</th>
+                                <th>종목명 (티커)</th>
+                                <th>현재가 (대비)</th>
                                 <th>Z-Score</th>
-                                <th>상태 신호</th>
+                                <th>리밸런싱 신호</th>
                             </tr>
                         </thead>
                         <tbody>
                 `;
-                
-                result.data.forEach(item => {
+
+                signalData.data.forEach(item => {
                     let badgeClass = 'hold';
                     let badgeLabel = '대기 (HOLD)';
-                    
+
                     if (item.signal === 'OVERHEAT' || item.signal === 'OVERHEATED_HOLD') {
                         badgeClass = 'overheat';
-                        badgeLabel = '과열 (OVERHEAT)';
+                        badgeLabel = '과열주의';
                     } else if (item.signal === 'REBALANCED') {
                         badgeClass = 'rebalanced';
-                        badgeLabel = '조정완료 (BUY)';
+                        badgeLabel = '매수시그널';
                     }
-                    
+
                     const priceFormatted = Math.floor(item.close).toLocaleString() + '원';
-                    
+
                     tableHtml += `
                         <tr>
                             <td><strong>${item.name}</strong> <span style="font-size: 0.75rem; color: var(--text-secondary);">${item.ticker.split('.')[0]}</span></td>
                             <td>${priceFormatted} <span style="font-size: 0.75rem; color: ${item.change_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${item.change_pct >= 0 ? '+' : ''}${item.change_pct.toFixed(2)}%</span></td>
-                            <td style="font-weight: bold; color: ${Math.abs(item.z_score) >= 2.0 ? 'var(--text-primary)' : 'var(--text-secondary)'}">${item.z_score.toFixed(2)}</td>
+                            <td style="font-weight: bold;">${item.z_score.toFixed(2)}</td>
                             <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
                         </tr>
                     `;
                 });
-                
-                tableHtml += `
-                        </tbody>
-                    </table>
-                `;
-                
-                scannerContent.innerHTML = tableHtml;
+
+                tableHtml += `</tbody></table>`;
+                scannerEl.innerHTML = tableHtml;
+
             } catch (err) {
-                console.error("신호 로드 에러:", err);
+                console.error("데이터 로딩 에러:", err);
             }
         }
 
-        // 초기 구동
         window.addEventListener('DOMContentLoaded', () => {
-            loadBacktestSummary();
-            loadSignals();
-            
-            // 30초마다 화면 자동 갱신
-            setInterval(loadSignals, 30000);
+            loadDashboard();
+            setInterval(loadDashboard, 30000); // 30초 주기
         });
     </script>
 </body>

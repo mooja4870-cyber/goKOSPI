@@ -80,6 +80,6 @@ if __name__ == "__main__":
     cache_thread = threading.Thread(target=update_signal_cache_worker, daemon=True)
     cache_thread.start()
     
-    print("[*] goKOSPI 프리미엄 대시보드 웹 서버 기동 중... (Port: 6666)")
-    # 포트 6666으로 플라스크 웹 서버 실행
-    app.run(host="0.0.0.0", port=6666, debug=False)
+    print("[*] goKOSPI 프리미엄 대시보드 웹 서버 기동 중... (Port: 9000)")
+    # 포트 9000으로 플라스크 웹 서버 실행
+    app.run(host="0.0.0.0", port=9000, debug=False)

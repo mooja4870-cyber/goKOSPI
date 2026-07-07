@@ -1,5 +1,22 @@
 # Version History
 
+## v1.0.1
+
+Date: 2026-07-07
+
+### 변경 내용
+
+* VS Code Python 인터프리터 경로 오류 해결 (`.vscode/settings.json` 내 인터프리터를 가상환경 경로로 변경)
+
+### 수정 파일
+
+* .vscode/settings.json
+* ver.md
+
+### 비고
+
+* VS Code 환경 에러 조치 완료
+
 ## v1.0.0
 
 Date: 2026-07-07

@@ -367,7 +367,7 @@
         #chart-modal {
             width: 100%;
             max-width: 1584px;
-            max-height: 82vh;
+            max-height: 92vh;
             background: rgba(255, 255, 255, 0.97);
             border-radius: 24px 24px 0 0;
             padding: 1.5rem 2rem 2rem;
@@ -417,8 +417,8 @@
             color: #fff;
             border-color: var(--accent-pink);
         }
-        #chart-canvas-container { width: 100%; height: 340px; border-radius: 12px; overflow: hidden; }
-        #zscore-canvas-container { width: 100%; height: 120px; margin-top: 0.6rem; border-radius: 8px; overflow: hidden; }
+        #chart-canvas-container { width: 100%; height: 490px; border-radius: 12px; overflow: hidden; }
+        #zscore-canvas-container { width: 100%; height: 173px; margin-top: 0.6rem; border-radius: 8px; overflow: hidden; }
         .chart-stat-row {
             display: flex;
             gap: 1rem;
@@ -705,7 +705,7 @@
                 cc.innerHTML = '';
                 candleChart = LightweightCharts.createChart(cc, {
                     width: cc.clientWidth,
-                    height: 340,
+                    height: 490,
                     layout: { background: { color: 'transparent' }, textColor: '#4a5568' },
                     grid: { vertLines: { color: 'rgba(0,0,0,0.04)' }, horzLines: { color: 'rgba(0,0,0,0.04)' } },
                     crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
@@ -729,7 +729,7 @@
                 zc.innerHTML = '';
                 zscoreChart = LightweightCharts.createChart(zc, {
                     width: zc.clientWidth,
-                    height: 120,
+                    height: 173,
                     layout: { background: { color: 'transparent' }, textColor: '#4a5568' },
                     grid: { vertLines: { color: 'transparent' }, horzLines: { color: 'rgba(0,0,0,0.04)' } },
                     rightPriceScale: { borderColor: 'rgba(0,0,0,0.1)' },

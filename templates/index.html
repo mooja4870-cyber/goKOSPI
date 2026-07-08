@@ -690,6 +690,8 @@ A. 아닙니다!
                         <!-- 자동완성 제안 리스트 삽입 영역 -->
                     </ul>
                 </div>
+                <!-- 최근/자주 검색 스마트 보드 -->
+                <div id="search-stats-board" style="margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.75rem; color: var(--text-secondary);"></div>
                 <div id="search-result-inspector" style="background: rgba(255, 255, 255, 0.25); border: 1px dashed rgba(0, 0, 0, 0.1); border-radius: 12px; padding: 1.2rem; min-height: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                     <span style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6;">위 검색창에 종목명을 입력하고 선택하시면<br>Z-Score와 투자 판단 신호가 나타납니다.</span>
                 </div>
@@ -925,6 +927,69 @@ A. 아닙니다!
         }
 
         // ─────────────────────────────────────────
+        //  검색 통계 (최근 검색, 자주 찾는 종목)
+        // ─────────────────────────────────────────
+        function updateSearchStats(ticker, name) {
+            let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+            let counts = JSON.parse(localStorage.getItem('searchCounts') || '{}');
+            
+            history = history.filter(item => item.ticker !== ticker);
+            history.unshift({ticker, name});
+            if (history.length > 10) history = history.slice(0, 10);
+            localStorage.setItem('searchHistory', JSON.stringify(history));
+            
+            counts[ticker] = { name: name, count: (counts[ticker] ? counts[ticker].count + 1 : 1) };
+            localStorage.setItem('searchCounts', JSON.stringify(counts));
+            
+            renderSearchStats();
+        }
+
+        function renderSearchStats() {
+            const board = document.getElementById('search-stats-board');
+            if (!board) return;
+            
+            let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+            let counts = JSON.parse(localStorage.getItem('searchCounts') || '{}');
+            
+            if (history.length === 0) {
+                board.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            if (history.length > 0) {
+                html += `<div style="display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center;">
+                    <span style="font-weight:700; min-width:65px; color:var(--text-secondary);">🕒 최근검색:</span>`;
+                history.forEach(item => {
+                    const safeName = item.name.replace(/'/g, "\\'");
+                    html += `<span class="badge" style="cursor:pointer; background:rgba(0,0,0,0.05); color:var(--text-primary); border:1px solid rgba(0,0,0,0.1);" onclick="selectSearchTicker('${item.ticker}', '${safeName}')">${item.name}</span>`;
+                });
+                html += `</div>`;
+            }
+            
+            const topFrequent = Object.keys(counts).map(k => ({ ticker: k, name: counts[k].name, count: counts[k].count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
+            
+            if (topFrequent.length > 0) {
+                html += `<div style="display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center; margin-top:0.3rem;">
+                    <span style="font-weight:700; min-width:65px; color:var(--accent-pink);">⭐ 많이찾은:</span>`;
+                topFrequent.forEach(item => {
+                    const safeName = item.name.replace(/'/g, "\\'");
+                    html += `<span class="badge" style="cursor:pointer; background:rgba(213,63,140,0.08); color:var(--accent-pink); border:1px solid rgba(213,63,140,0.2);" onclick="selectSearchTicker('${item.ticker}', '${safeName}')">${item.name} <small>(${item.count})</small></span>`;
+                });
+                html += `</div>`;
+            }
+            
+            board.innerHTML = html;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSearchStats();
+        });
+
+        // ─────────────────────────────────────────
         //  검색 필터링 및 자동완성 팝업 함수
         // ─────────────────────────────────────────
         let searchTimeout = null;
@@ -994,6 +1059,9 @@ A. 아닙니다!
                     inspectorEl.innerHTML = `<span style="color:var(--accent-red); font-size:0.88rem; line-height:1.6;">진단 오류:<br>${item.error}</span>`;
                     return;
                 }
+
+                // 성공 시 검색 통계(로컬스토리지) 갱신
+                updateSearchStats(ticker, item.name);
 
                 // 뱃지 및 설명 생성
                 let badgeClass, badgeLabel;
@@ -1324,7 +1392,10 @@ A. 아닙니다!
                         const tooltipText = `최근 3일 동안의 단기 상승 에너지 강도가 최근 20일간의 평균 변동폭 대비 ${zVal}배 수준으로 과열되어 꼭대기(고점)에 도달했음을 의미합니다.`;
                         
                         li.innerHTML = `
-                            <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
+                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                                <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
+                                <button style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:var(--text-primary); transition:all 0.15s;" onmouseover="this.style.background='#fff';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(255,255,255,0.8)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); openChartModal('${item.ticker}', '${safeName}')">📈 차트</button>
+                            </div>
                             <span class="tooltip" data-tooltip="${tooltipText}" style="color:var(--accent-pink); font-weight:bold; border-bottom:1px dotted var(--accent-pink); cursor:help;" onclick="event.stopPropagation();">${label} (Z: ${zVal})</span>
                         `;
                         sellEl.appendChild(li);
@@ -1355,7 +1426,10 @@ A. 아닙니다!
                         const tooltipText = `최근 20영업일 동안 가장 비싸게 도달했던 고가(${peakPriceFormatted}) 대비 현재 주가가 -${ddVal}% 만큼 아래로 꺾여 가격 거품이 빠진 저평가 상태입니다.`;
                         
                         li.innerHTML = `
-                            <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
+                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                                <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
+                                <button style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:var(--text-primary); transition:all 0.15s;" onmouseover="this.style.background='#fff';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(255,255,255,0.8)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); openChartModal('${item.ticker}', '${safeName}')">📈 차트</button>
+                            </div>
                             <span class="tooltip" data-tooltip="${tooltipText}" style="color:var(--accent-green); font-weight:bold; border-bottom:1px dotted var(--accent-green); cursor:help;" onclick="event.stopPropagation();">${label} (하락: -${ddVal}%)</span>
                         `;
                         buyEl.appendChild(li);

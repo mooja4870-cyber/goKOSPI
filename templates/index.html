@@ -256,6 +256,7 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* 중딩버전 툴팁 스타일 정의 */
+        /* 중딩버전 툴팁 스타일 정의 */
         .tooltip {
             position: relative;
             cursor: help;
@@ -287,6 +288,39 @@
         }
 
         .tooltip:hover::after {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* 320px 와이드형 툴팁 (긴 설명용) */
+        .tooltip-wide {
+            position: relative;
+            cursor: help;
+        }
+        .tooltip-wide::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.98);
+            color: var(--text-primary);
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            white-space: pre-wrap;
+            width: 320px;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+            border: 1.5px solid rgba(213, 63, 140, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            z-index: 999;
+            font-weight: 500;
+            line-height: 1.6;
+            text-align: left;
+        }
+        .tooltip-wide:hover::after {
             visibility: visible;
             opacity: 1;
         }
@@ -615,7 +649,19 @@
                     * <strong>누적 시뮬레이션</strong>: <span id="bt-total-signals">860회</span> 신호 검증 완료
                 </div>
                 <div style="margin-top: 1rem; border-top: 1px dashed rgba(0, 0, 0, 0.06); padding-top: 0.8rem;">
-                    <div style="font-size: 0.82rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-primary);">🏆 리밸런싱 최적화 상위 종목</div>
+                    <div class="tooltip-wide" style="font-size: 0.82rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-primary); display: inline-block; border-bottom: 1px dotted var(--text-secondary);" data-tooltip="💡 승률의 진짜 의미 (중학생 버전 가이드)
+
+Q. 승률 91.7% = 지금 사면 91.7% 번다?
+A. 아닙니다! 
+
+1. 언제 적용되나요?
+→ 오직 종목의 Z-Score(온도계)가 -1.8 이하(매수시그널/강력매수)로 꽁꽁 얼어붙었을 때만 이 높은 승률이 발동돼요.
+
+2. 91.7%의 진짜 뜻은?
+→ 과거 3년 동안 이 종목이 '매수시그널'까지 떨어진 적이 총 12번 있었는데, 그중 11번은 사고 나서 5일 안에 반등에 성공해서 수익을 줬다는 역사적 사실이에요!
+
+3. 어떻게 써먹나요?
+→ 지금 Z-Score가 중립(흰색)이나 익절권장(주황)이라면 절대 지금 사면 안 돼요! 온도계가 -1.8 이하 파란색/초록색으로 떨어질 때까지 꾹 참고 기다렸다 사야 이 높은 확률을 내 편으로 만들 수 있어요!">🏆 리밸런싱 최적화 상위 종목 ❓</div>
                     <ul id="bt-top-performers" style="list-style: none; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary);">
                         <!-- 동적 주입 -->
                     </ul>

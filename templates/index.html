@@ -4,21 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>goKOSPI 투자 나침반 대시보드</title>
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #08090d;
-            --card-bg: rgba(22, 24, 35, 0.7);
-            --border-color: rgba(255, 255, 255, 0.06);
+            --bg-color: #07080a;
+            --card-bg: rgba(14, 15, 23, 0.65);
+            --border-color: rgba(255, 42, 122, 0.09);
             --text-primary: #f8f9fa;
-            --text-secondary: #9094a6;
-            --accent-blue: #007aff;
-            --accent-red: #ff3b30;
-            --accent-green: #34c759;
-            --red-glow: 0 8px 32px rgba(255, 59, 48, 0.15);
-            --green-glow: 0 8px 32px rgba(52, 199, 89, 0.15);
-            --blue-glow: 0 8px 32px rgba(0, 122, 255, 0.15);
+            --text-secondary: #8e92a8;
+            --accent-pink: #ff2a7a;
+            --accent-blue: #00f0ff;
+            --accent-red: #ff2d55;
+            --accent-green: #00ff66;
+            --pink-glow: 0 8px 32px rgba(255, 42, 122, 0.15);
+            --blue-glow: 0 8px 32px rgba(0, 240, 255, 0.15);
+            --green-glow: 0 8px 32px rgba(0, 255, 102, 0.15);
+            --red-glow: 0 8px 32px rgba(255, 45, 85, 0.15);
         }
 
         * {
@@ -28,14 +30,14 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-primary);
             min-height: 100vh;
             padding: 2rem;
             overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 10%, rgba(0, 122, 255, 0.08) 0%, transparent 50%),
-                              radial-gradient(circle at 90% 80%, rgba(255, 59, 48, 0.04) 0%, transparent 40%);
+            background-image: radial-gradient(circle at 50% -10%, rgba(255, 42, 122, 0.08) 0%, transparent 60%),
+                              radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.04) 0%, transparent 40%);
         }
 
         header {
@@ -50,8 +52,8 @@
 
         h1 {
             font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #ffffff 40%, var(--accent-blue) 100%);
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 40%, var(--accent-pink) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -109,8 +111,8 @@
         .action-card.market::before { background: var(--accent-blue); }
         .action-card.market { box-shadow: var(--blue-glow); }
         
-        .action-card.sell::before { background: var(--accent-red); }
-        .action-card.sell { box-shadow: var(--red-glow); }
+        .action-card.sell::before { background: var(--accent-pink); }
+        .action-card.sell { box-shadow: var(--pink-glow); border-color: rgba(255, 42, 122, 0.2); }
         
         .action-card.buy::before { background: var(--accent-green); }
         .action-card.buy { box-shadow: var(--green-glow); }
@@ -221,20 +223,20 @@
             font-weight: 700;
         }
 
-        .badge.strong-sell { background: rgba(255, 45, 45, 0.18); color: #ff2d2d; border: 1px solid rgba(255, 45, 45, 0.35); font-weight: 700; }
+        .badge.strong-sell { background: rgba(255, 42, 122, 0.18); color: #ff2a7a; border: 1px solid rgba(255, 42, 122, 0.4); text-shadow: 0 0 8px rgba(255, 42, 122, 0.5); font-weight: 700; }
         .badge.overheat    { background: rgba(255, 149, 0, 0.15); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.3); }
         .badge.caution     { background: rgba(255, 214, 10, 0.12); color: #c8a800; border: 1px solid rgba(255, 214, 10, 0.25); }
         .badge.hold        { background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.06); }
-        .badge.mild-buy    { background: rgba(90, 200, 250, 0.12); color: #5ac8fa; border: 1px solid rgba(90, 200, 250, 0.25); }
-        .badge.buy         { background: rgba(52, 199, 89, 0.12); color: var(--accent-green); border: 1px solid rgba(52, 199, 89, 0.25); }
-        .badge.strong-buy  { background: rgba(52, 199, 89, 0.22); color: #00e05a; border: 1px solid rgba(52, 199, 89, 0.45); font-weight: 700; }
+        .badge.mild-buy    { background: rgba(0, 240, 255, 0.12); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.25); }
+        .badge.buy         { background: rgba(0, 255, 102, 0.12); color: var(--accent-green); border: 1px solid rgba(0, 255, 102, 0.25); }
+        .badge.strong-buy  { background: rgba(0, 255, 102, 0.22); color: #00ff66; border: 1px solid rgba(0, 255, 102, 0.45); text-shadow: 0 0 8px rgba(0, 255, 102, 0.5); font-weight: 700; }
 
         .spinner {
             border: 3px solid rgba(255, 255, 255, 0.04);
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            border-left-color: var(--accent-blue);
+            border-left-color: var(--accent-pink);
             animation: spin 1s linear infinite;
             margin: 2rem auto;
         }
@@ -328,10 +330,10 @@
         }
 
         .tab-button.active {
-            background: rgba(52, 199, 89, 0.12);
-            color: var(--accent-green);
-            border-color: rgba(52, 199, 89, 0.35);
-            box-shadow: 0 4px 20px rgba(52, 199, 89, 0.15);
+            background: rgba(255, 42, 122, 0.12);
+            color: var(--accent-pink);
+            border-color: rgba(255, 42, 122, 0.35);
+            box-shadow: 0 4px 20px rgba(255, 42, 122, 0.15);
         }
     </style>
 </head>
@@ -369,7 +371,7 @@
         <div class="action-card sell">
             <div>
                 <div class="card-header-desc">🚨 Sell & Warning Signals</div>
-                <div class="card-main-val" style="color: var(--accent-red);">익절 및 추가매수 금지</div>
+                <div class="card-main-val" style="color: var(--accent-pink);">익절 및 추가매수 금지</div>
             </div>
             <ul class="action-list" id="sell-recommendations">
                 <div class="spinner"></div>
@@ -726,7 +728,7 @@
                     
                     if (z >= 2.0) {
                         marketTextEl.innerText = `🚨 ${catName} 과열 경보`;
-                        marketTextEl.style.color = "var(--accent-red)";
+                        marketTextEl.style.color = "var(--accent-pink)";
                         
                         if (currentCategory === 'CRYPTO') {
                             marketDescEl.innerHTML = `현재 가상자산 지수 Z-Score가 <strong>${formatZScore(z)}</strong>로 매우 높은 과열 상태입니다. 크립토 자산 특유의 급격한 매물 투하 및 폭락 리스크가 존재하므로 추가 매수를 멈추고 일부 현금화를 권장합니다.`;
@@ -760,7 +762,7 @@
                         const label = item.signal === 'STRONG_SELL' ? '🔴 강력매도' : '🟠 익절권장';
                         li.innerHTML = `
                             <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
-                            <span style="color:var(--accent-red); font-weight:bold;">${label} (Z: ${formatZScore(item.z_score, 1)})</span>
+                            <span style="color:var(--accent-pink); font-weight:bold;">${label} (Z: ${formatZScore(item.z_score, 1)})</span>
                         `;
                         sellEl.appendChild(li);
                     });

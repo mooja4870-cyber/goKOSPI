@@ -72,9 +72,9 @@ def calculate_rebalancing_signals(df: pd.DataFrame, threshold_z: float = 2.5) ->
     # 4. 변동성 대비 최근 상승률 배율 (Z-Score)
     df['Z_Score'] = df['Sc'] / df['ATR_Ratio'].replace(0, np.nan)
     
-    # 5. 7단계 신호 분류 (ATR 계산 대기 행은 HOLD 처리)
+    # 5. 7단계 신호 분류 및 고점 대비 하락폭 계산용 최고가(최근 20일 최고 종가) 설정
     df['Signal'] = 'HOLD'
-    df['Peak_Close'] = df['Close']
+    df['Peak_Close'] = df['Close'].rolling(window=20, min_periods=1).max()
     
     for i in range(len(df)):
         if i < 20:  # ATR 20일 계산 대기

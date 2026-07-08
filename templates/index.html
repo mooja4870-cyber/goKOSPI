@@ -1427,12 +1427,20 @@ A. 아닙니다!
                             <div style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.4rem;">
                                 🛡️ 백테스트 (1주일 전 과거 시점에서 오늘 가격을 예측했다면?)
                             </div>
-                            <div style="font-size:0.8rem; line-height:1.6; color:var(--text-primary); background:rgba(0,0,0,0.02); padding:0.6rem; border-radius:6px;">
-                                <div>• 기준일: ${bt.past_date} (당시 종가: ${Math.floor(bt.past_price).toLocaleString()}원)</div>
-                                <div>• <strong>AI의 당시 예측 오늘가</strong>: ${Math.floor(bt.predicted_today_price).toLocaleString()}원</div>
-                                <div>• <strong>오늘 실제가</strong>: ${Math.floor(bt.actual_today_price).toLocaleString()}원</div>
-                                <div style="margin-top:0.3rem; font-weight:700;">
-                                    👉 예측 일치도 (정확성): <span style="color:${btAccColor}; font-size:0.9rem;">${bt.accuracy.toFixed(1)}%</span>
+                            <div style="background:rgba(0,0,0,0.02); padding:0.8rem; border-radius:6px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <div>
+                                        <span style="font-size:0.75rem; color:var(--text-secondary);">1주 전 종가</span>
+                                        <div style="font-size:0.95rem; font-weight:600;">${Math.floor(bt.past_price).toLocaleString()}원</div>
+                                    </div>
+                                    <div style="font-size:1.1rem; color:var(--text-secondary);">➔</div>
+                                    <div style="text-align:right;">
+                                        <span style="font-size:0.75rem; color:var(--text-secondary);">당시 예측 오늘가</span>
+                                        <div style="font-size:1rem; font-weight:700;">
+                                            ${Math.floor(bt.predicted_today_price).toLocaleString()}원
+                                            <div style="font-size:0.75rem; font-weight:600; margin-top:0.2rem;">👉 예측 일치도: <span style="color:${btAccColor};">${bt.accuracy.toFixed(1)}%</span></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

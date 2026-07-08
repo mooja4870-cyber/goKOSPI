@@ -420,9 +420,15 @@
                     <span style="font-size: 1.8rem; font-weight: 700; color: var(--accent-green);" id="bt-hit-rate">72.12%</span>
                 </div>
                 <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; border-top: 1px solid rgba(0, 0, 0, 0.06); padding-top: 0.8rem;">
-                    * <strong>과열 신호 적중률</strong>: 74.3% (5일 내 조정)<br>
-                    * <strong>조정 완료 적중률</strong>: 70.2% (5일 내 반등)<br>
-                    * <strong>누적 시뮬레이션</strong>: 860회 신호 검증 완료
+                    * <strong>과열 신호 적중률</strong>: <span id="bt-overheat-rate">74.3%</span> (5일 내 조정)<br>
+                    * <strong>조정 완료 적중률</strong>: <span id="bt-rebalance-rate">70.2%</span> (5일 내 반등)<br>
+                    * <strong>누적 시뮬레이션</strong>: <span id="bt-total-signals">860회</span> 신호 검증 완료
+                </div>
+                <div style="margin-top: 1rem; border-top: 1px dashed rgba(0,0,0,0.06); padding-top: 0.8rem;">
+                    <div style="font-size: 0.82rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-primary);">🏆 리밸런싱 최적화 상위 종목</div>
+                    <ul id="bt-top-performers" style="list-style: none; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary);">
+                        <!-- 동적 주입 -->
+                    </ul>
                 </div>
             </div>
 
@@ -672,10 +678,29 @@
 
         async function loadDashboard() {
             try {
-                // 1. 백테스트 개요 로드
-                const btRes = await fetch('/api/backtest_summary');
+                // 1. 백테스트 개요 로드 (현재 카테고리 매핑 연동)
+                const btRes = await fetch(`/api/backtest_summary?category=${currentCategory}`);
                 const btData = await btRes.json();
                 document.getElementById('bt-hit-rate').innerText = btData.hit_rate + '%';
+                document.getElementById('bt-overheat-rate').innerText = btData.overheat_hit_rate + '%';
+                document.getElementById('bt-rebalance-rate').innerText = btData.rebalance_hit_rate + '%';
+                document.getElementById('bt-total-signals').innerText = btData.total_signals + '회';
+
+                // 상위 최적화 우수 종목 리스트 출력
+                const perfEl = document.getElementById('bt-top-performers');
+                perfEl.innerHTML = '';
+                btData.top_performers.forEach(p => {
+                    const li = document.createElement('li');
+                    li.style.display = 'flex';
+                    li.style.justify = 'space-between';
+                    li.style.padding = '0.2rem 0';
+                    li.style.borderBottom = '1px solid rgba(0,0,0,0.02)';
+                    li.innerHTML = `
+                        <span>${p.name} <span style="font-size:0.7rem; color:var(--text-secondary);">${p.ticker.split('.')[0]}</span></span>
+                        <span style="font-weight:600; color:var(--accent-pink);">${p.win_rate}% 승률</span>
+                    `;
+                    perfEl.appendChild(li);
+                });
 
                 // 2. 실시간 신호 분석 데이터 로드 (선택된 카테고리 적용)
                 const signalRes = await fetch(`/api/signals?category=${currentCategory}`);

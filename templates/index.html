@@ -721,6 +721,9 @@ A. 아닙니다!
 
         // ── 차트 모달 열기 ──────────────────────────
         function openChartModal(ticker, name) {
+            // 차트 열람 시 검색 이력(최근 검색, 많이 찾은)에 종목 기록 추가
+            updateSearchStats(ticker, name);
+
             currentChartTicker = ticker;
             document.getElementById('chart-modal-title').textContent = `📈 ${name} (${ticker})`;
             document.getElementById('chart-modal-overlay').classList.add('open');
@@ -1339,7 +1342,7 @@ A. 아닙니다!
                         <td>${priceFormatted} <span style="font-size: 0.75rem; color: ${item.change_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${item.change_pct >= 0 ? '+' : ''}${item.change_pct.toFixed(2)}%</span></td>
                         <td style="font-weight: bold;">${formatZScore(item.z_score)}</td>
                         <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
-                        <td><button onclick="event.stopPropagation();openChartModal('${item.ticker}','${safeName}')" style="background:rgba(213,63,140,0.1);border:1px solid rgba(213,63,140,0.25);border-radius:6px;padding:0.2rem 0.5rem;font-size:0.75rem;cursor:pointer;color:var(--accent-pink);font-weight:600;">📈 차트</button></td>
+                        <td><button onclick="event.stopPropagation();openChartModal('${item.ticker}','${safeName}')" title="차트" style="background:rgba(213,63,140,0.1);border:1px solid rgba(213,63,140,0.25);border-radius:6px;padding:0.2rem 0.5rem;font-size:0.75rem;cursor:pointer;color:var(--accent-pink);font-weight:600;">📈</button></td>
                     </tr>
                 `;
             });
@@ -1507,8 +1510,8 @@ A. 아닙니다!
                             <div style="display:flex; align-items:center; gap:0.5rem;">
                                 <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
                                 <div style="display:flex; gap:0.2rem;">
-                                    <button style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:var(--text-primary); transition:all 0.15s;" onmouseover="this.style.background='#fff';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(255,255,255,0.8)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); openChartModal('${item.ticker}', '${safeName}')">📈 차트</button>
-                                    <button style="background:rgba(107,70,193,0.08); border:1px solid rgba(107,70,193,0.25); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:#6b46c1; transition:all 0.15s; font-weight:600;" onmouseover="this.style.background='rgba(107,70,193,0.15)';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(107,70,193,0.08)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); document.getElementById('ticker-search').value='${item.ticker}'; selectSearchTicker('${item.ticker}', '${safeName}', true);">🔮 AI예측</button>
+                                    <button title="차트" style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:var(--text-primary); transition:all 0.15s;" onmouseover="this.style.background='#fff';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(255,255,255,0.8)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); openChartModal('${item.ticker}', '${safeName}')">📈</button>
+                                    <button title="AI 예측" style="background:rgba(107,70,193,0.08); border:1px solid rgba(107,70,193,0.25); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:#6b46c1; transition:all 0.15s; font-weight:600;" onmouseover="this.style.background='rgba(107,70,193,0.15)';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(107,70,193,0.08)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); document.getElementById('ticker-search').value='${item.ticker}'; selectSearchTicker('${item.ticker}', '${safeName}', true);">🔮</button>
                                 </div>
                             </div>
                             <span class="tooltip" data-tooltip="${tooltipText}" style="color:var(--accent-pink); font-weight:bold; border-bottom:1px dotted var(--accent-pink); cursor:help;" onclick="event.stopPropagation();">${label} (Z: ${zVal})</span>
@@ -1544,8 +1547,8 @@ A. 아닙니다!
                             <div style="display:flex; align-items:center; gap:0.5rem;">
                                 <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
                                 <div style="display:flex; gap:0.2rem;">
-                                    <button style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:var(--text-primary); transition:all 0.15s;" onmouseover="this.style.background='#fff';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(255,255,255,0.8)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); openChartModal('${item.ticker}', '${safeName}')">📈 차트</button>
-                                    <button style="background:rgba(107,70,193,0.08); border:1px solid rgba(107,70,193,0.25); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:#6b46c1; transition:all 0.15s; font-weight:600;" onmouseover="this.style.background='rgba(107,70,193,0.15)';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(107,70,193,0.08)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); document.getElementById('ticker-search').value='${item.ticker}'; selectSearchTicker('${item.ticker}', '${safeName}', true);">🔮 AI예측</button>
+                                    <button title="차트" style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:var(--text-primary); transition:all 0.15s;" onmouseover="this.style.background='#fff';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(255,255,255,0.8)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); openChartModal('${item.ticker}', '${safeName}')">📈</button>
+                                    <button title="AI 예측" style="background:rgba(107,70,193,0.08); border:1px solid rgba(107,70,193,0.25); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:#6b46c1; transition:all 0.15s; font-weight:600;" onmouseover="this.style.background='rgba(107,70,193,0.15)';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(107,70,193,0.08)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); document.getElementById('ticker-search').value='${item.ticker}'; selectSearchTicker('${item.ticker}', '${safeName}', true);">🔮</button>
                                 </div>
                             </div>
                             <span class="tooltip" data-tooltip="${tooltipText}" style="color:var(--accent-green); font-weight:bold; border-bottom:1px dotted var(--accent-green); cursor:help;" onclick="event.stopPropagation();">${label} (하락: -${ddVal}%)</span>

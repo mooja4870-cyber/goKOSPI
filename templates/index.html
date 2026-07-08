@@ -555,6 +555,16 @@
                             <input type="checkbox" id="toggle-marker-text" onchange="applyMarkerTextVisibility()" style="cursor: pointer; accent-color: var(--accent-pink);">
                             차트에 신호 한글명 표시
                         </label>
+                        
+                        <!-- 지표 토글 옵션 -->
+                        <div class="chart-indicator-btns" style="margin-top: 0.5rem; display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 0.5rem;">
+                            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">보조지표:</span>
+                            <label style="font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.2rem; user-select:none;"><input type="checkbox" id="toggle-ma20" onchange="toggleIndicator('ma20')"> 20일선</label>
+                            <label style="font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.2rem; user-select:none;"><input type="checkbox" id="toggle-ma60" onchange="toggleIndicator('ma60')"> 60일선</label>
+                            <label style="font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.2rem; user-select:none;"><input type="checkbox" id="toggle-ma120" onchange="toggleIndicator('ma120')"> 120일선</label>
+                            <label style="font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.2rem; user-select:none;"><input type="checkbox" id="toggle-bb" onchange="toggleIndicator('bb')"> 볼린저밴드</label>
+                            <label style="font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.2rem; user-select:none;"><input type="checkbox" id="toggle-rsi" onchange="toggleIndicator('rsi')"> RSI</label>
+                        </div>
                     </div>
                 </div>
                 <button id="chart-modal-close" onclick="closeChartModal()">✕</button>
@@ -564,6 +574,9 @@
             <!-- Z-Score 히스토그램 -->
             <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.6rem;font-weight:600;">📊 Z-Score 과열도 추이</div>
             <div id="zscore-canvas-container"></div>
+            <!-- RSI 보조지표 -->
+            <div id="rsi-title" style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.6rem;font-weight:600;display:none;">📉 RSI (14) 과매수/과매도 추이</div>
+            <div id="rsi-canvas-container" style="display:none; margin-bottom: 0.5rem;"></div>
             <!-- 통계 요약 카드 -->
             <div class="chart-stat-row" id="chart-stat-row"></div>
         </div>
@@ -709,6 +722,16 @@ A. 아닙니다!
         let zscoreChart = null;
         let zscoreSeries = null;
         let currentChartMarkers = []; // 차트 마커 캐시
+        
+        let currentCandleData = []; // 지표 계산용 원본 데이터
+        let ma20Series = null;
+        let ma60Series = null;
+        let ma120Series = null;
+        let bbUpperSeries = null;
+        let bbMiddleSeries = null;
+        let bbLowerSeries = null;
+        let rsiChart = null;
+        let rsiSeries = null;
 
         const SIGNAL_LABEL_MAP = {
             STRONG_SELL: '🔴 강력매도', OVERHEAT: '🟠 익절권장', CAUTION: '🟡 경계관망',
@@ -730,6 +753,9 @@ A. 아닙니다!
             document.body.style.overflow = 'hidden';
             // 체크박스 기본값 미표기(false) 설정
             document.getElementById('toggle-marker-text').checked = false;
+            ['ma20', 'ma60', 'ma120', 'bb', 'rsi'].forEach(id => document.getElementById(`toggle-${id}`).checked = false);
+            document.getElementById('rsi-title').style.display = 'none';
+            document.getElementById('rsi-canvas-container').style.display = 'none';
             // 기간 버튼 초기화
             document.querySelectorAll('.chart-period-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
             loadChart(ticker, '3mo', null);
@@ -749,6 +775,151 @@ A. 아닙니다!
             candleSeries.setMarkers(formatted);
         }
 
+        // ── 기술적 지표 계산 ──────────────────────
+        function calculateSMA(data, period) {
+            let result = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) continue;
+                let sum = 0;
+                for (let j = 0; j < period; j++) sum += data[i - j].close;
+                result.push({ time: data[i].time, value: sum / period });
+            }
+            return result;
+        }
+
+        function calculateBB(data, period, stdDevMultiplier) {
+            let upper = [], middle = [], lower = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) continue;
+                let sum = 0;
+                for (let j = 0; j < period; j++) sum += data[i - j].close;
+                let sma = sum / period;
+                
+                let sumSq = 0;
+                for (let j = 0; j < period; j++) {
+                    let diff = data[i - j].close - sma;
+                    sumSq += diff * diff;
+                }
+                let stdDev = Math.sqrt(sumSq / period);
+                
+                middle.push({ time: data[i].time, value: sma });
+                upper.push({ time: data[i].time, value: sma + stdDev * stdDevMultiplier });
+                lower.push({ time: data[i].time, value: sma - stdDev * stdDevMultiplier });
+            }
+            return { upper, middle, lower };
+        }
+
+        function calculateRSI(data, period) {
+            let result = [];
+            if (data.length <= period) return result;
+            
+            let avgGain = 0, avgLoss = 0;
+            for (let i = 1; i <= period; i++) {
+                let diff = data[i].close - data[i - 1].close;
+                if (diff > 0) avgGain += diff;
+                else avgLoss -= diff;
+            }
+            avgGain /= period;
+            avgLoss /= period;
+            
+            let rs = avgGain / (avgLoss === 0 ? 1e-10 : avgLoss);
+            result.push({ time: data[period].time, value: 100 - (100 / (1 + rs)) });
+            
+            for (let i = period + 1; i < data.length; i++) {
+                let diff = data[i].close - data[i - 1].close;
+                let gain = diff > 0 ? diff : 0;
+                let loss = diff < 0 ? -diff : 0;
+                
+                avgGain = ((avgGain * (period - 1)) + gain) / period;
+                avgLoss = ((avgLoss * (period - 1)) + loss) / period;
+                
+                rs = avgGain / (avgLoss === 0 ? 1e-10 : avgLoss);
+                result.push({ time: data[i].time, value: 100 - (100 / (1 + rs)) });
+            }
+            return result;
+        }
+
+        // ── 지표 표시/숨김 처리 ──────────────────────
+        function applyIndicators() {
+            ['ma20', 'ma60', 'ma120', 'bb', 'rsi'].forEach(id => toggleIndicator(id, true));
+        }
+
+        function toggleIndicator(type, isFromLoad = false) {
+            if (!candleChart || !currentCandleData || currentCandleData.length === 0) return;
+            const isChecked = document.getElementById(`toggle-${type}`).checked;
+            
+            if (type === 'ma20') {
+                if (isChecked) {
+                    if (!ma20Series) {
+                        ma20Series = candleChart.addLineSeries({ color: '#2962FF', lineWidth: 2, title: '20일선', crosshairMarkerVisible: false });
+                        ma20Series.setData(calculateSMA(currentCandleData, 20));
+                    }
+                } else if (ma20Series) { candleChart.removeSeries(ma20Series); ma20Series = null; }
+            } else if (type === 'ma60') {
+                if (isChecked) {
+                    if (!ma60Series) {
+                        ma60Series = candleChart.addLineSeries({ color: '#FF6D00', lineWidth: 2, title: '60일선', crosshairMarkerVisible: false });
+                        ma60Series.setData(calculateSMA(currentCandleData, 60));
+                    }
+                } else if (ma60Series) { candleChart.removeSeries(ma60Series); ma60Series = null; }
+            } else if (type === 'ma120') {
+                if (isChecked) {
+                    if (!ma120Series) {
+                        ma120Series = candleChart.addLineSeries({ color: '#00C853', lineWidth: 2, title: '120일선', crosshairMarkerVisible: false });
+                        ma120Series.setData(calculateSMA(currentCandleData, 120));
+                    }
+                } else if (ma120Series) { candleChart.removeSeries(ma120Series); ma120Series = null; }
+            } else if (type === 'bb') {
+                if (isChecked) {
+                    if (!bbUpperSeries) {
+                        const bbData = calculateBB(currentCandleData, 20, 2);
+                        bbUpperSeries = candleChart.addLineSeries({ color: 'rgba(107, 70, 193, 0.4)', lineWidth: 1, title: 'BB상단', crosshairMarkerVisible: false });
+                        bbMiddleSeries = candleChart.addLineSeries({ color: 'rgba(107, 70, 193, 0.8)', lineWidth: 1, title: 'BB중심', crosshairMarkerVisible: false, lineStyle: LightweightCharts.LineStyle.Dashed });
+                        bbLowerSeries = candleChart.addLineSeries({ color: 'rgba(107, 70, 193, 0.4)', lineWidth: 1, title: 'BB하단', crosshairMarkerVisible: false });
+                        bbUpperSeries.setData(bbData.upper);
+                        bbMiddleSeries.setData(bbData.middle);
+                        bbLowerSeries.setData(bbData.lower);
+                    }
+                } else {
+                    if (bbUpperSeries) { candleChart.removeSeries(bbUpperSeries); bbUpperSeries = null; }
+                    if (bbMiddleSeries) { candleChart.removeSeries(bbMiddleSeries); bbMiddleSeries = null; }
+                    if (bbLowerSeries) { candleChart.removeSeries(bbLowerSeries); bbLowerSeries = null; }
+                }
+            } else if (type === 'rsi') {
+                const rsiContainer = document.getElementById('rsi-canvas-container');
+                const rsiTitle = document.getElementById('rsi-title');
+                if (isChecked) {
+                    rsiContainer.style.display = 'block';
+                    rsiTitle.style.display = 'block';
+                    if (!rsiChart) {
+                        rsiChart = LightweightCharts.createChart(rsiContainer, {
+                            width: document.getElementById('chart-canvas-container').clientWidth,
+                            height: 140,
+                            layout: { background: { color: 'transparent' }, textColor: '#4a5568' },
+                            grid: { vertLines: { color: 'transparent' }, horzLines: { color: 'rgba(0,0,0,0.04)' } },
+                            rightPriceScale: { borderColor: 'rgba(0,0,0,0.1)' },
+                            timeScale: { borderColor: 'rgba(0,0,0,0.1)', timeVisible: false },
+                            handleScroll: false, handleScale: false,
+                        });
+                        
+                        rsiSeries = rsiChart.addLineSeries({ color: '#9C27B0', lineWidth: 1.5, title: 'RSI(14)', crosshairMarkerVisible: false });
+                        rsiSeries.setData(calculateRSI(currentCandleData, 14));
+                        
+                        // 30, 70 기준선
+                        rsiSeries.createPriceLine({ price: 70, color: 'rgba(229, 62, 62, 0.5)', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: '과매수' });
+                        rsiSeries.createPriceLine({ price: 30, color: 'rgba(49, 130, 206, 0.5)', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: '과매도' });
+
+                        // 동기화
+                        const range = candleChart.timeScale().getVisibleRange();
+                        if (range) rsiChart.timeScale().setVisibleRange(range);
+                    }
+                } else {
+                    rsiContainer.style.display = 'none';
+                    rsiTitle.style.display = 'none';
+                }
+            }
+        }
+
         function closeChartModal(e) {
             if (e && e.target !== document.getElementById('chart-modal-overlay') && e.type !== 'click') return;
             document.getElementById('chart-modal-overlay').classList.remove('open');
@@ -756,6 +927,11 @@ A. 아닙니다!
             // 차트 인스턴스 제거
             if (candleChart)  { candleChart.remove();  candleChart  = null; candleSeries  = null; }
             if (zscoreChart)  { zscoreChart.remove();  zscoreChart  = null; zscoreSeries  = null; }
+            if (rsiChart)     { rsiChart.remove();     rsiChart     = null; rsiSeries     = null; }
+            
+            ma20Series = null; ma60Series = null; ma120Series = null;
+            bbUpperSeries = null; bbMiddleSeries = null; bbLowerSeries = null;
+            currentCandleData = [];
         }
 
         // ── lightweight-charts 렌더링 ────────────
@@ -770,9 +946,16 @@ A. 아닙니다!
             // 기존 차트 제거
             const cc = document.getElementById('chart-canvas-container');
             const zc = document.getElementById('zscore-canvas-container');
+            const rc = document.getElementById('rsi-canvas-container');
             cc.innerHTML = '<div class="spinner" style="margin:4rem auto;"></div>';
             zc.innerHTML = '';
+            if (rc) rc.innerHTML = '';
             document.getElementById('chart-stat-row').innerHTML = '';
+            
+            ma20Series = null; ma60Series = null; ma120Series = null;
+            bbUpperSeries = null; bbMiddleSeries = null; bbLowerSeries = null;
+            rsiSeries = null; rsiChart = null;
+            currentCandleData = [];
 
             try {
                 const res = await fetch(`/api/chart_data?ticker=${encodeURIComponent(ticker)}&period=${period}`);
@@ -801,6 +984,7 @@ A. 아닙니다!
                     wickUpColor: '#e53e3e', wickDownColor: '#3182ce',
                 });
                 candleSeries.setData(data.candles);
+                currentCandleData = data.candles;
                 // 마커 데이터 캐싱 및 텍스트 토글 적용
                 currentChartMarkers = (data.markers || []).map(m => ({
                     time: m.time,
@@ -835,6 +1019,15 @@ A. 아닙니다!
                 }));
                 zscoreSeries.setData(zColored);
                 zscoreChart.timeScale().fitContent();
+
+                // 차트 간 시간축 동기화
+                candleChart.timeScale().subscribeVisibleTimeRangeChange((range) => {
+                    if (zscoreChart) zscoreChart.timeScale().setVisibleRange(range);
+                    if (rsiChart) rsiChart.timeScale().setVisibleRange(range);
+                });
+
+                // 기존 체크박스 상태에 따라 보조지표 복구
+                applyIndicators();
 
                 // 차트 가로 크기 동기화
                 new ResizeObserver(() => {

@@ -928,9 +928,21 @@
                     actionGuide = '극단적 저점 신호입니다. 현금 여력을 적극 활용하여 분할 매수 진입을 강력 추천합니다!';
                 }
 
+                // 신호별 지침 배너 색상
+                const guideColors = {
+                    STRONG_SELL: { bg: 'rgba(197,48,48,0.12)', border: '#c53030', icon: '🚨', textColor: '#c53030' },
+                    OVERHEAT:    { bg: 'rgba(192,86,33,0.10)', border: '#c05621', icon: '🔥', textColor: '#c05621' },
+                    CAUTION:     { bg: 'rgba(151,90,22,0.10)', border: '#975a16', icon: '⚠️', textColor: '#975a16' },
+                    HOLD:        { bg: 'rgba(74,85,104,0.08)', border: '#4a5568', icon: '⏸️', textColor: '#4a5568' },
+                    MILD_BUY:    { bg: 'rgba(43,108,176,0.10)', border: '#2b6cb0', icon: '👀', textColor: '#2b6cb0' },
+                    BUY:         { bg: 'rgba(39,103,73,0.12)', border: '#276749', icon: '✅', textColor: '#276749' },
+                    STRONG_BUY:  { bg: 'rgba(28,69,50,0.15)', border: '#1c4532', icon: '💎', textColor: '#1c4532' },
+                };
+                const gc = guideColors[item.signal] || guideColors['HOLD'];
+                const safeName2 = (item.name || item.ticker).replace(/'/g, "\\'");
                 const priceFormatted = Math.floor(item.close).toLocaleString() + '원';
                 const pctFormatted = (item.change_pct >= 0 ? '+' : '') + item.change_pct.toFixed(2) + '%';
-                const pctColor = item.change_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+                const pctColor = item.change_pct >= 0 ? '#e53e3e' : '#3182ce';
 
                 // 결과 뷰 업데이트
                 inspectorEl.innerHTML = `
@@ -939,19 +951,53 @@
                             <span style="font-size:1.25rem; font-weight:700;">${item.name} <span style="font-size:0.8rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
                             <span class="badge ${badgeClass}" style="font-size:0.8rem; padding:0.3rem 0.6rem;">${badgeLabel}</span>
                         </div>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:0.8rem;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:1rem; border-bottom:1px solid rgba(0,0,0,0.07); padding-bottom:0.8rem;">
                             <div>
                                 <span style="font-size:0.8rem; color:var(--text-secondary);">현재가</span>
                                 <div style="font-size:1.1rem; font-weight:700; margin-top:0.2rem;">${priceFormatted} <span style="font-size:0.8rem; color:${pctColor}; font-weight:normal;">${pctFormatted}</span></div>
                             </div>
                             <div style="text-align:right;">
-                                <span class="tooltip" style="font-size:0.8rem; color:var(--text-secondary);" data-tooltip="최근 가격이 평소보다 얼마나 비정상적으로 많이 오르거나 내렸는지 보여주는 온도계입니다. Z점수가 2.0 이상이면 과열 상태, -2.0 이하면 조정 완료를 뜻해요!">Z-Score ❓</span>
+                                <span class="tooltip" style="font-size:0.8rem; color:var(--text-secondary);" data-tooltip="최근 가격이 평소보다 얼마나 비정상적으로 많이 오르거나 내렸는지 보여주는 온도계입니다.">Z-Score ❓</span>
                                 <div style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-top:0.2rem;">${formatZScore(item.z_score)}</div>
                             </div>
                         </div>
-                        <div style="font-size:0.85rem; line-height:1.6; color:var(--text-primary);">
-                            <strong>💡 투자 판단 지침:</strong> <span style="color:#dcdfe6;">${actionGuide}</span>
+
+                        <!-- ★ 투자 판단 지침 강조 배너 ★ -->
+                        <div style="
+                            background: ${gc.bg};
+                            border: 1.5px solid ${gc.border};
+                            border-left: 4px solid ${gc.border};
+                            border-radius: 10px;
+                            padding: 0.9rem 1rem;
+                            margin-bottom: 1rem;
+                        ">
+                            <div style="font-size:0.72rem; font-weight:800; color:${gc.textColor}; letter-spacing:0.05em; margin-bottom:0.35rem;">
+                                ${gc.icon} 투자 판단 지침
+                            </div>
+                            <div style="font-size:0.88rem; font-weight:600; color:${gc.textColor}; line-height:1.65;">
+                                ${actionGuide}
+                            </div>
                         </div>
+
+                        <!-- ★ 차트 보기 버튼 ★ -->
+                        <button onclick="openChartModal('${item.ticker}', '${safeName2}')"
+                            style="
+                                width: 100%;
+                                padding: 0.65rem;
+                                background: linear-gradient(135deg, rgba(213,63,140,0.12), rgba(213,63,140,0.06));
+                                border: 1.5px solid rgba(213,63,140,0.35);
+                                border-radius: 10px;
+                                color: var(--accent-pink);
+                                font-size: 0.88rem;
+                                font-weight: 700;
+                                cursor: pointer;
+                                transition: all 0.18s;
+                                letter-spacing: 0.02em;
+                            "
+                            onmouseover="this.style.background='rgba(213,63,140,0.2)'"
+                            onmouseout="this.style.background='linear-gradient(135deg,rgba(213,63,140,0.12),rgba(213,63,140,0.06))'">
+                            📈 캔들차트 + Z-Score 추이 보기
+                        </button>
                     </div>
                 `;
             } catch (err) {

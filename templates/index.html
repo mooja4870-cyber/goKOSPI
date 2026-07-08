@@ -366,7 +366,7 @@
         }
         #chart-modal {
             width: 100%;
-            max-width: 1100px;
+            max-width: 1584px;
             max-height: 82vh;
             background: rgba(255, 255, 255, 0.97);
             border-radius: 24px 24px 0 0;
@@ -400,7 +400,7 @@
             transition: background 0.15s;
         }
         #chart-modal-close:hover { background: rgba(0,0,0,0.12); }
-        .chart-period-btns { display: flex; gap: 0.4rem; margin-bottom: 0.8rem; }
+        .chart-period-btns { display: flex; gap: 0.4rem; margin-bottom: 0.8rem; flex-wrap: wrap; }
         .chart-period-btn {
             background: rgba(0,0,0,0.05);
             border: 1px solid rgba(0,0,0,0.1);
@@ -503,6 +503,11 @@
                         <button class="chart-period-btn active" onclick="loadChart(currentChartTicker,'3mo',this)">3개월</button>
                         <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'6mo',this)">6개월</button>
                         <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'1y',this)">1년</button>
+                        <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'2y',this)">2년</button>
+                        <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'3y',this)">3년</button>
+                        <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'5y',this)">5년</button>
+                        <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'10y',this)">10년</button>
+                        <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'max',this)">최대</button>
                     </div>
                 </div>
                 <button id="chart-modal-close" onclick="closeChartModal()">✕</button>

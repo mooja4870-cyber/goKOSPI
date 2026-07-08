@@ -1319,9 +1319,13 @@ A. 아닙니다!
                         const safeName = (item.name || item.ticker).replace(/'/g, "\\'");
                         li.title = "클릭 → 차트 보기";
                         li.onclick = () => openChartModal(item.ticker, safeName);
+                        
+                        const zVal = formatZScore(item.z_score, 1);
+                        const tooltipText = `최근 3일 동안의 단기 상승 에너지 강도가 최근 20일간의 평균 변동폭 대비 ${zVal}배 수준으로 과열되어 꼭대기(고점)에 도달했음을 의미합니다.`;
+                        
                         li.innerHTML = `
                             <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
-                            <span style="color:var(--accent-pink); font-weight:bold;">${label} (Z: ${formatZScore(item.z_score, 1)})</span>
+                            <span class="tooltip" data-tooltip="${tooltipText}" style="color:var(--accent-pink); font-weight:bold; border-bottom:1px dotted var(--accent-pink); cursor:help;" onclick="event.stopPropagation();">${label} (Z: ${zVal})</span>
                         `;
                         sellEl.appendChild(li);
                     });
@@ -1341,9 +1345,18 @@ A. 아닙니다!
                         const safeName = (item.name || item.ticker).replace(/'/g, "\\'");
                         li.title = "클릭 → 차트 보기";
                         li.onclick = () => openChartModal(item.ticker, safeName);
+                        
+                        let unit = '원';
+                        if (currentCategory === 'CRYPTO' || currentCategory === 'DOW' || currentCategory === 'SP500') {
+                            unit = '$';
+                        }
+                        const peakPriceFormatted = item.peak_close >= 1 ? Math.floor(item.peak_close).toLocaleString() + unit : item.peak_close.toFixed(2) + unit;
+                        const ddVal = item.drawdown_pct.toFixed(1);
+                        const tooltipText = `최근 20영업일 동안 가장 비싸게 도달했던 고가(${peakPriceFormatted}) 대비 현재 주가가 -${ddVal}% 만큼 아래로 꺾여 가격 거품이 빠진 저평가 상태입니다.`;
+                        
                         li.innerHTML = `
                             <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
-                            <span style="color:var(--accent-green); font-weight:bold;">${label} (하락: -${item.drawdown_pct.toFixed(1)}%)</span>
+                            <span class="tooltip" data-tooltip="${tooltipText}" style="color:var(--accent-green); font-weight:bold; border-bottom:1px dotted var(--accent-green); cursor:help;" onclick="event.stopPropagation();">${label} (하락: -${ddVal}%)</span>
                         `;
                         buyEl.appendChild(li);
                     });

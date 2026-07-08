@@ -6,6 +6,8 @@
     <title>goOK 투자 나침반 대시보드</title>
     <!-- Google Fonts Plus Jakarta Sans & Share Tech Mono -->
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- TradingView Lightweight Charts (금융 차트 라이브러리) -->
+    <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         :root {
             --bg-color: #f7fafc;
@@ -347,9 +349,173 @@
             border-color: rgba(213, 63, 140, 0.35);
             box-shadow: 0 8px 24px rgba(213, 63, 140, 0.15);
         }
+
+        /* ── 차트 모달 패널 ───────────────────────────────── */
+        #chart-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        #chart-modal-overlay.open {
+            display: flex;
+        }
+        #chart-modal {
+            width: 100%;
+            max-width: 1100px;
+            max-height: 82vh;
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 24px 24px 0 0;
+            padding: 1.5rem 2rem 2rem;
+            box-shadow: 0 -8px 48px rgba(0,0,0,0.15);
+            overflow-y: auto;
+            animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes slideUp {
+            from { transform: translateY(60px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+        #chart-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        #chart-modal-title { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); }
+        #chart-modal-close {
+            background: rgba(0,0,0,0.06);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+        #chart-modal-close:hover { background: rgba(0,0,0,0.12); }
+        .chart-period-btns { display: flex; gap: 0.4rem; margin-bottom: 0.8rem; }
+        .chart-period-btn {
+            background: rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 0.3rem 0.7rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: var(--text-secondary);
+        }
+        .chart-period-btn.active, .chart-period-btn:hover {
+            background: var(--accent-pink);
+            color: #fff;
+            border-color: var(--accent-pink);
+        }
+        #chart-canvas-container { width: 100%; height: 340px; border-radius: 12px; overflow: hidden; }
+        #zscore-canvas-container { width: 100%; height: 120px; margin-top: 0.6rem; border-radius: 8px; overflow: hidden; }
+        .chart-stat-row {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .chart-stat-item {
+            background: rgba(0,0,0,0.04);
+            border-radius: 10px;
+            padding: 0.5rem 0.9rem;
+            flex: 1;
+            min-width: 110px;
+            text-align: center;
+        }
+        .chart-stat-label { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.2rem; }
+        .chart-stat-value { font-size: 1.05rem; font-weight: 800; color: var(--text-primary); }
+
+        /* ── 히트맵 뷰 ───────────────────────────────────── */
+        .view-toggle-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .view-toggle-btn {
+            background: rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 0.4rem 0.9rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: var(--text-secondary);
+        }
+        .view-toggle-btn.active {
+            background: var(--accent-blue);
+            color: #fff;
+            border-color: var(--accent-blue);
+        }
+        #heatmap-container {
+            display: none;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 0.5rem 0;
+        }
+        #heatmap-container.visible { display: flex; }
+        .hm-cell {
+            border-radius: 10px;
+            padding: 8px 10px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 80px;
+            overflow: hidden;
+            position: relative;
+        }
+        .hm-cell:hover { transform: scale(1.04); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        .hm-cell-name { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hm-cell-z { font-size: 1rem; font-weight: 900; color: #fff; margin-top: 4px; }
+        .hm-cell-signal { font-size: 0.62rem; color: rgba(255,255,255,0.8); margin-top: 2px; }
+        /* 히트맵 신호별 배경색 */
+        .hm-strong-sell  { background: linear-gradient(135deg, #c53030, #e53e3e); }
+        .hm-overheat     { background: linear-gradient(135deg, #c05621, #dd6b20); }
+        .hm-caution      { background: linear-gradient(135deg, #975a16, #d69e2e); }
+        .hm-hold         { background: linear-gradient(135deg, #4a5568, #718096); }
+        .hm-mild-buy     { background: linear-gradient(135deg, #2b6cb0, #3182ce); }
+        .hm-buy          { background: linear-gradient(135deg, #276749, #38a169); }
+        .hm-strong-buy   { background: linear-gradient(135deg, #1c4532, #2f855a); }
     </style>
 </head>
 <body>
+
+    <!-- ✦ 차트 모달 오버레이 ✦ -->
+    <div id="chart-modal-overlay" onclick="closeChartModal(event)">
+        <div id="chart-modal" onclick="event.stopPropagation()">
+            <div id="chart-modal-header">
+                <div>
+                    <div id="chart-modal-title">종목 차트</div>
+                    <div class="chart-period-btns">
+                        <button class="chart-period-btn active" onclick="loadChart(currentChartTicker,'3mo',this)">3개월</button>
+                        <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'6mo',this)">6개월</button>
+                        <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'1y',this)">1년</button>
+                    </div>
+                </div>
+                <button id="chart-modal-close" onclick="closeChartModal()">✕</button>
+            </div>
+            <!-- 캔들차트 -->
+            <div id="chart-canvas-container"></div>
+            <!-- Z-Score 히스토그램 -->
+            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.6rem;font-weight:600;">📊 Z-Score 과열도 추이</div>
+            <div id="zscore-canvas-container"></div>
+            <!-- 통계 요약 카드 -->
+            <div class="chart-stat-row" id="chart-stat-row"></div>
+        </div>
+    </div>
 
     <header>
         <h1>🧭 goOK 실시간 투자 나침반</h1>
@@ -408,16 +574,25 @@
         <div class="detail-panel">
             <div class="card">
                 <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>🔍 KOSPI 50대 우량주 스캐너 전체보기</span>
-                    <select id="sort-select" onchange="handleSortChange()" style="background: rgba(255, 255, 255, 0.55); color: var(--text-primary); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; padding: 0.3rem 0.6rem; font-size: 0.8rem; cursor: pointer; outline: none; font-weight: 600;">
-                        <option value="market_cap" style="background:#fff; color:#1a202c;">시총 순으로 보기</option>
-                        <option value="change_pct" style="background:#fff; color:#1a202c;">상승률 순으로 보기</option>
-                        <option value="z_score" style="background:#fff; color:#1a202c;">과열도(Z-Score) 순으로 보기</option>
-                    </select>
+                    <span id="scanner-title">🔍 KOSPI 50대 우량주 스캐너 전체보기</span>
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <!-- 뷰 토글 -->
+                        <button class="view-toggle-btn active" id="view-btn-table" onclick="switchView('table')">📋 테이블</button>
+                        <button class="view-toggle-btn" id="view-btn-heatmap" onclick="switchView('heatmap')">🗺️ 히트맵</button>
+                        <!-- 정렬 -->
+                        <select id="sort-select" onchange="handleSortChange()" style="background: rgba(255, 255, 255, 0.55); color: var(--text-primary); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; padding: 0.3rem 0.6rem; font-size: 0.8rem; cursor: pointer; outline: none; font-weight: 600;">
+                            <option value="market_cap" style="background:#fff; color:#1a202c;">시총 순</option>
+                            <option value="change_pct" style="background:#fff; color:#1a202c;">상승률 순</option>
+                            <option value="z_score" style="background:#fff; color:#1a202c;">Z-Score 순</option>
+                        </select>
+                    </div>
                 </div>
+                <!-- 테이블 뷰 -->
                 <div id="full-scanner-list">
                     <div class="spinner"></div>
                 </div>
+                <!-- 히트맵 뷰 -->
+                <div id="heatmap-container"></div>
             </div>
         </div>
 
@@ -459,7 +634,212 @@
     </div>
 
     <script>
-        // 검색 필터링 및 자동완성 팝업 함수 (백엔드 전종목 검색 API 연동)
+        // ─────────────────────────────────────────
+        //  차트 모달 전역 변수
+        // ─────────────────────────────────────────
+        let currentChartTicker = null;
+        let candleChart = null;
+        let candleSeries = null;
+        let zscoreChart = null;
+        let zscoreSeries = null;
+
+        const SIGNAL_LABEL_MAP = {
+            STRONG_SELL: '🔴 강력매도', OVERHEAT: '🟠 익절권장', CAUTION: '🟡 경계관망',
+            HOLD: '⚪ 중립대기',  MILD_BUY: '🩵 관심매집', BUY: '🟢 매수시그널', STRONG_BUY: '💚 강력매수'
+        };
+        const Z_HM_CLASS = {
+            STRONG_SELL: 'hm-strong-sell', OVERHEAT: 'hm-overheat', CAUTION: 'hm-caution',
+            HOLD: 'hm-hold', MILD_BUY: 'hm-mild-buy', BUY: 'hm-buy', STRONG_BUY: 'hm-strong-buy'
+        };
+
+        // ── 차트 모달 열기 ──────────────────────────
+        function openChartModal(ticker, name) {
+            currentChartTicker = ticker;
+            document.getElementById('chart-modal-title').textContent = `📈 ${name} (${ticker})`;
+            document.getElementById('chart-modal-overlay').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            // 기간 버튼 초기화
+            document.querySelectorAll('.chart-period-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+            loadChart(ticker, '3mo', null);
+        }
+
+        function closeChartModal(e) {
+            if (e && e.target !== document.getElementById('chart-modal-overlay') && e.type !== 'click') return;
+            document.getElementById('chart-modal-overlay').classList.remove('open');
+            document.body.style.overflow = '';
+            // 차트 인스턴스 제거
+            if (candleChart)  { candleChart.remove();  candleChart  = null; candleSeries  = null; }
+            if (zscoreChart)  { zscoreChart.remove();  zscoreChart  = null; zscoreSeries  = null; }
+        }
+
+        // ── lightweight-charts 렌더링 ────────────
+        async function loadChart(ticker, period, btn) {
+            if (!ticker) return;
+            // 기간 버튼 active 토글
+            if (btn) {
+                document.querySelectorAll('.chart-period-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+
+            // 기존 차트 제거
+            const cc = document.getElementById('chart-canvas-container');
+            const zc = document.getElementById('zscore-canvas-container');
+            cc.innerHTML = '<div class="spinner" style="margin:4rem auto;"></div>';
+            zc.innerHTML = '';
+            document.getElementById('chart-stat-row').innerHTML = '';
+
+            try {
+                const res = await fetch(`/api/chart_data?ticker=${encodeURIComponent(ticker)}&period=${period}`);
+                const data = await res.json();
+                if (!data.success) {
+                    cc.innerHTML = `<p style="color:var(--accent-red);padding:2rem;text-align:center;">${data.error}</p>`;
+                    return;
+                }
+
+                // ─ 캔들차트 ─
+                cc.innerHTML = '';
+                candleChart = LightweightCharts.createChart(cc, {
+                    width: cc.clientWidth,
+                    height: 340,
+                    layout: { background: { color: 'transparent' }, textColor: '#4a5568' },
+                    grid: { vertLines: { color: 'rgba(0,0,0,0.04)' }, horzLines: { color: 'rgba(0,0,0,0.04)' } },
+                    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+                    rightPriceScale: { borderColor: 'rgba(0,0,0,0.1)' },
+                    timeScale: { borderColor: 'rgba(0,0,0,0.1)', timeVisible: true },
+                    handleScroll: true,
+                    handleScale: true,
+                });
+                candleSeries = candleChart.addCandlestickSeries({
+                    upColor: '#38a169', downColor: '#e53e3e',
+                    borderUpColor: '#2f855a', borderDownColor: '#c53030',
+                    wickUpColor: '#38a169', wickDownColor: '#e53e3e',
+                });
+                candleSeries.setData(data.candles);
+                if (data.markers && data.markers.length > 0) {
+                    candleSeries.setMarkers(data.markers);
+                }
+                candleChart.timeScale().fitContent();
+
+                // ─ Z-Score 히스토그램 ─
+                zc.innerHTML = '';
+                zscoreChart = LightweightCharts.createChart(zc, {
+                    width: zc.clientWidth,
+                    height: 120,
+                    layout: { background: { color: 'transparent' }, textColor: '#4a5568' },
+                    grid: { vertLines: { color: 'transparent' }, horzLines: { color: 'rgba(0,0,0,0.04)' } },
+                    rightPriceScale: { borderColor: 'rgba(0,0,0,0.1)' },
+                    timeScale: { borderColor: 'rgba(0,0,0,0.1)', timeVisible: false },
+                    handleScroll: false, handleScale: false,
+                });
+                zscoreSeries = zscoreChart.addHistogramSeries({
+                    color: '#d53f8c',
+                    priceFormat: { type: 'price', precision: 2 },
+                });
+                // Z-Score 색상 분기
+                const zColored = data.z_series.map(pt => ({
+                    time: pt.time,
+                    value: pt.value,
+                    color: pt.value >= 1.8 ? '#e53e3e' : pt.value <= -1.8 ? '#38a169' : '#a0aec0'
+                }));
+                zscoreSeries.setData(zColored);
+                zscoreChart.timeScale().fitContent();
+
+                // 차트 가로 크기 동기화
+                new ResizeObserver(() => {
+                    if (candleChart) candleChart.applyOptions({ width: cc.clientWidth });
+                    if (zscoreChart) zscoreChart.applyOptions({ width: zc.clientWidth });
+                }).observe(cc);
+
+                // ─ 통계 요약 ─
+                const sig = data.current_signal;
+                const sigLabel = SIGNAL_LABEL_MAP[sig] || sig;
+                const zVal = data.current_z;
+                const statRow = document.getElementById('chart-stat-row');
+                statRow.innerHTML = `
+                    <div class="chart-stat-item">
+                        <div class="chart-stat-label">현재 종가</div>
+                        <div class="chart-stat-value">${data.current_close.toLocaleString()}</div>
+                    </div>
+                    <div class="chart-stat-item">
+                        <div class="chart-stat-label">Z-Score</div>
+                        <div class="chart-stat-value" style="color:${zVal>=1.8?'#e53e3e':zVal<=-1.8?'#2f855a':'#4a5568'}">${zVal.toFixed(2)}</div>
+                    </div>
+                    <div class="chart-stat-item">
+                        <div class="chart-stat-label">현재 신호</div>
+                        <div class="chart-stat-value" style="font-size:0.9rem;">${sigLabel}</div>
+                    </div>
+                    <div class="chart-stat-item">
+                        <div class="chart-stat-label">시그널 마커</div>
+                        <div class="chart-stat-value">${data.markers.length}건</div>
+                    </div>`;
+            } catch(err) {
+                cc.innerHTML = `<p style="color:var(--accent-red);padding:2rem;text-align:center;">차트 로딩 오류: ${err.message}</p>`;
+            }
+        }
+
+        // ─────────────────────────────────────────
+        //  히트맵 뷰 전환
+        // ─────────────────────────────────────────
+        let currentView = 'table';
+
+        function switchView(view) {
+            currentView = view;
+            const tableEl = document.getElementById('full-scanner-list');
+            const hmEl    = document.getElementById('heatmap-container');
+            const btnTable = document.getElementById('view-btn-table');
+            const btnHm    = document.getElementById('view-btn-heatmap');
+            const sortSel  = document.getElementById('sort-select');
+
+            if (view === 'heatmap') {
+                tableEl.style.display = 'none';
+                hmEl.classList.add('visible');
+                btnTable.classList.remove('active');
+                btnHm.classList.add('active');
+                sortSel.style.display = 'none';
+                renderHeatmap();
+            } else {
+                tableEl.style.display = '';
+                hmEl.classList.remove('visible');
+                btnTable.classList.add('active');
+                btnHm.classList.remove('active');
+                sortSel.style.display = '';
+            }
+        }
+
+        function renderHeatmap() {
+            const hmEl = document.getElementById('heatmap-container');
+            if (!lastSignalData || lastSignalData.length === 0) {
+                hmEl.innerHTML = '<p style="color:var(--text-secondary);padding:1rem;">데이터 로딩 중...</p>';
+                return;
+            }
+            hmEl.innerHTML = '';
+            // 시가총액 기준 정규화 크기 (없으면 균등)
+            const maxIdx = lastSignalData.length;
+            lastSignalData.forEach((item, idx) => {
+                const signal = item.signal || 'HOLD';
+                const z = (item.z_score || 0).toFixed(2);
+                const name = (item.name || item.ticker || '').replace('[ETF] ', '');
+                const hmClass = Z_HM_CLASS[signal] || 'hm-hold';
+                const sigLabel = SIGNAL_LABEL_MAP[signal] || signal;
+                // 크기: STRONG_BUY/STRONG_SELL는 조금 크게
+                const isStrong = signal === 'STRONG_BUY' || signal === 'STRONG_SELL';
+                const cell = document.createElement('div');
+                cell.className = `hm-cell ${hmClass}`;
+                cell.style.width = isStrong ? '110px' : '90px';
+                cell.style.height = isStrong ? '80px' : '68px';
+                cell.title = `${name}\nZ-Score: ${z}\n신호: ${sigLabel}\n클릭하면 차트를 열 수 있습니다`;
+                cell.innerHTML = `
+                    <div class="hm-cell-name">${name}</div>
+                    <div class="hm-cell-z">${z}</div>
+                    <div class="hm-cell-signal">${sigLabel}</div>`;
+                cell.onclick = () => openChartModal(item.ticker, name);
+                hmEl.appendChild(cell);
+            });
+        }
+
+        // ─────────────────────────────────────────
+        //  검색 필터링 및 자동완성 팝업 함수
+        // ─────────────────────────────────────────
         let searchTimeout = null;
         function filterSearchSuggestions() {
             const query = document.getElementById('ticker-search').value.trim();
@@ -605,6 +985,7 @@
 
         // 전역 데이터 캐시
         let cachedSignals = [];
+        let lastSignalData = [];  // 히트맵용 전역 캐시
 
         // 수치 포맷 세이프가드 유틸리티 함수
         function formatZScore(val, precision = 2) {
@@ -628,6 +1009,7 @@
                             <th>현재가 (대비)</th>
                             <th class="tooltip" data-tooltip="최근 가격이 평소보다 얼마나 비정상적으로 많이 오르거나 내렸는지 보여주는 '온도계'입니다. Z점수가 2.0 이상이면 뜨겁게 달아오른 과열 상태, -2.0 이하면 너무 차갑게 억눌려 반등이 가까워진 상태를 뜻해요!">Z-Score</th>
                             <th class="tooltip" data-tooltip="변동성을 기반으로 AI가 판단한 7단계 투자 나침반 지침입니다.&#10;&#10;🔴 강력매도: Z≥2.5 극단 과열, 절반 이상 즉시 익절&#10;🟠 익절권장: Z≥1.8 고점 근접, 분할 익절 시작&#10;🟡 경계관망: Z≥1.0 상승 탄력 소진, 추가 매수 자제&#10;⚪ 중립대기: Z±1.0 내외, 현 포지션 유지&#10;🩵 관심매집: Z≤-1.0 소폭 눌림목, 소량 분할 매수&#10;🟢 매수시그널: Z≤-1.8 저점 진입 적기, 적극 매수&#10;💚 강력매수: Z≤-2.5 극단 저점, 최대 비중 투입">리밸런싱 신호</th>
+                            <th>차트</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -636,13 +1018,15 @@
             cachedSignals.forEach(item => {
                 const { badgeClass, badgeLabel } = getSignalBadge(item.signal);
                 const priceFormatted = Math.floor(item.close).toLocaleString() + '원';
+                const safeName = (item.name || item.ticker).replace(/'/g, "\\'");
 
                 tableHtml += `
-                    <tr>
+                    <tr style="cursor:pointer;" onclick="openChartModal('${item.ticker}','${safeName}')" title="클릭 → 차트 보기">
                         <td><strong>${item.name}</strong> <span style="font-size: 0.75rem; color: var(--text-secondary);">${item.ticker.split('.')[0]}</span></td>
                         <td>${priceFormatted} <span style="font-size: 0.75rem; color: ${item.change_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${item.change_pct >= 0 ? '+' : ''}${item.change_pct.toFixed(2)}%</span></td>
                         <td style="font-weight: bold;">${formatZScore(item.z_score)}</td>
                         <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+                        <td><button onclick="event.stopPropagation();openChartModal('${item.ticker}','${safeName}')" style="background:rgba(213,63,140,0.1);border:1px solid rgba(213,63,140,0.25);border-radius:6px;padding:0.2rem 0.5rem;font-size:0.75rem;cursor:pointer;color:var(--accent-pink);font-weight:600;">📈 차트</button></td>
                     </tr>
                 `;
             });
@@ -744,6 +1128,8 @@
                     ...item,
                     original_index: idx
                 }));
+                // 히트맵용 전역 데이터 동기화
+                lastSignalData = cachedSignals;
 
                 cachedSignals.forEach(item => {
                     if (item.ticker === targetIndexTicker) {

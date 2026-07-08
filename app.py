@@ -250,6 +250,101 @@ def inspect_ticker():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
+@app.route("/api/chart_data")
+def get_chart_data():
+    """
+    특정 종목의 OHLCV + Z-Score 시계열을 lightweight-charts용 JSON으로 반환.
+    캔들차트 데이터, Z-Score 히스토그램, 매수/매도 시그널 마커를 포함.
+    """
+    ticker = request.args.get("ticker", "").strip()
+    period = request.args.get("period", "3mo")
+    if not ticker:
+        return jsonify({"success": False, "error": "ticker 파라미터가 필요합니다."})
+
+    try:
+        ticker_obj = yf.Ticker(ticker)
+        df = ticker_obj.history(period=period, timeout=6)
+
+        if df is None or df.empty or len(df) < 22:
+            return jsonify({"success": False, "error": "데이터가 부족합니다 (최소 22 영업일 필요)."})
+
+        from engine import calculate_rebalancing_signals, classify_signal_7stage, SIGNAL_META
+
+        df_analyzed = calculate_rebalancing_signals(df.copy())
+
+        candles = []
+        z_series = []
+        markers = []
+
+        for i, (ts, row) in enumerate(df_analyzed.iterrows()):
+            # Unix timestamp (초 단위)
+            t = int(ts.timestamp())
+
+            # 1. 캔들 데이터
+            if not (math.isnan(row['Open']) or math.isnan(row['High']) or
+                    math.isnan(row['Low']) or math.isnan(row['Close'])):
+                candles.append({
+                    "time": t,
+                    "open": round(float(row['Open']), 4),
+                    "high": round(float(row['High']), 4),
+                    "low": round(float(row['Low']), 4),
+                    "close": round(float(row['Close']), 4),
+                })
+
+            # 2. Z-Score 히스토그램 시리즈
+            z = row.get('Z_Score', float('nan'))
+            if not math.isnan(z):
+                z_series.append({"time": t, "value": round(float(z), 4)})
+
+            # 3. 매수/매도 시그널 마커 (i >= 20 이후만, 신호 변화 시점)
+            if i >= 20:
+                signal = row.get('Signal', 'HOLD')
+                prev_signal = df_analyzed.iloc[i - 1].get('Signal', 'HOLD')
+                if signal != prev_signal and signal in ('STRONG_BUY', 'BUY', 'MILD_BUY',
+                                                         'STRONG_SELL', 'OVERHEAT'):
+                    is_buy = signal in ('STRONG_BUY', 'BUY', 'MILD_BUY')
+                    markers.append({
+                        "time": t,
+                        "position": "belowBar" if is_buy else "aboveBar",
+                        "color": "#2f855a" if is_buy else "#e53e3e",
+                        "shape": "arrowUp" if is_buy else "arrowDown",
+                        "text": SIGNAL_META.get(signal, {}).get('label', signal),
+                        "signal": signal,
+                    })
+
+        # 종목명 탐색
+        name = ticker
+        for cat, tickers_dict in CATEGORY_TICKERS.items():
+            if ticker in tickers_dict:
+                name = tickers_dict[ticker]
+                break
+        else:
+            match = next((s for s in krx_stocks if s["ticker"] == ticker), None)
+            if match:
+                name = match["name"]
+
+        last_row = df_analyzed.iloc[-1]
+        last_z = last_row.get('Z_Score', 0.0)
+        if math.isnan(last_z):
+            last_z = 0.0
+
+        return jsonify({
+            "success": True,
+            "ticker": ticker,
+            "name": name,
+            "candles": candles,
+            "z_series": z_series,
+            "markers": markers,
+            "current_z": round(float(last_z), 4),
+            "current_signal": last_row.get('Signal', 'HOLD'),
+            "current_close": round(float(last_row['Close']), 4),
+            "period": period,
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
 @app.route("/api/backtest_summary")
 def get_backtest_summary():
     category = request.args.get("category", "KOSPI").upper()

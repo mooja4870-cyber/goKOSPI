@@ -6,6 +6,7 @@ import FinanceDataReader as fdr
 import yfinance as yf
 from collector import fetch_market_data, get_ticker_name, CATEGORY_TICKERS
 from engine import analyze_last_signal
+from predict_engine import run_prediction
 
 app = Flask(__name__)
 
@@ -430,6 +431,19 @@ def get_backtest_summary():
         "success": True,
         **stats
     })
+
+@app.route("/api/predict")
+def api_predict():
+    ticker = request.args.get("ticker")
+    if not ticker:
+        return jsonify({"success": False, "error": "종목 코드가 제공되지 않았습니다."})
+    
+    try:
+        # 기본 5영업일(약 1주일) 예측
+        res = run_prediction(ticker, horizon_days=5)
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 if __name__ == "__main__":
     init_krx_stocks()

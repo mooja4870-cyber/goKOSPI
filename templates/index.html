@@ -710,9 +710,9 @@
                     handleScale: true,
                 });
                 candleSeries = candleChart.addCandlestickSeries({
-                    upColor: '#38a169', downColor: '#e53e3e',
-                    borderUpColor: '#2f855a', borderDownColor: '#c53030',
-                    wickUpColor: '#38a169', wickDownColor: '#e53e3e',
+                    upColor: '#e53e3e', downColor: '#3182ce',
+                    borderUpColor: '#c53030', borderDownColor: '#2b6cb0',
+                    wickUpColor: '#e53e3e', wickDownColor: '#3182ce',
                 });
                 candleSeries.setData(data.candles);
                 if (data.markers && data.markers.length > 0) {
@@ -739,7 +739,7 @@
                 const zColored = data.z_series.map(pt => ({
                     time: pt.time,
                     value: pt.value,
-                    color: pt.value >= 1.8 ? '#e53e3e' : pt.value <= -1.8 ? '#38a169' : '#a0aec0'
+                    color: pt.value >= 1.8 ? '#e53e3e' : pt.value <= -1.8 ? '#3182ce' : '#a0aec0'
                 }));
                 zscoreSeries.setData(zColored);
                 zscoreChart.timeScale().fitContent();
@@ -762,7 +762,7 @@
                     </div>
                     <div class="chart-stat-item">
                         <div class="chart-stat-label">Z-Score</div>
-                        <div class="chart-stat-value" style="color:${zVal>=1.8?'#e53e3e':zVal<=-1.8?'#2f855a':'#4a5568'}">${zVal.toFixed(2)}</div>
+                        <div class="chart-stat-value" style="color:${zVal>=1.8?'#e53e3e':zVal<=-1.8?'#3182ce':'#4a5568'}">${zVal.toFixed(2)}</div>
                     </div>
                     <div class="chart-stat-item">
                         <div class="chart-stat-label">현재 신호</div>

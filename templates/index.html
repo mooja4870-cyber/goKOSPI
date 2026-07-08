@@ -1588,6 +1588,18 @@ A. 아닙니다!
             });
             document.getElementById('tab-' + category).classList.add('active');
             
+            // 스캐너 타이틀 동적 변경
+            const categoryNames = {
+                'KOSPI': 'KOSPI',
+                'KOSDAQ': 'KOSDAQ',
+                'DOW': 'DOW',
+                'SP500': 'S&P 500',
+                'COMMODITY': '금·은',
+                'CRYPTO': '가상자산'
+            };
+            const catName = categoryNames[category] || category;
+            document.getElementById('scanner-title').innerText = `🔍 ${catName} 50대 우량주 스캐너 전체보기`;
+            
             // 데이터 비동기 재로드
             loadDashboard();
         }

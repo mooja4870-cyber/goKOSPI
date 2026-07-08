@@ -109,34 +109,49 @@ def run_prediction(ticker, horizon_days=5):
     
     future_date = current_date + timedelta(days=int(horizon_days * 1.4)) # 대략적 영업일 환산 (주말 포함)
     
-    # --- B. 과거 예측의 백테스트 (오늘을 예측했던 과거 시점 평가) ---
-    # 과거 시점 = 오늘로부터 정확히 horizon_days 이전의 행
-    # df의 인덱스 상에서 끝에서 horizon_days + 1 번째 행
-    backtest_data = None
-    if len(df) > horizon_days:
-        past_idx = -1 - horizon_days
-        past_row = df.iloc[[past_idx]]
-        past_date = past_row.index[0]
-        past_price = past_row['Close'].values[0]
-        
-        # 당시 시점에서 모델이 없으므로, 현재 훈련된 모델을 사용하되 당시의 Feature를 입력
-        X_past = past_row[features]
-        X_past_scaled = scaler.transform(X_past)
-        past_predicted_price = model.predict(X_past_scaled)[0]
-        
-        actual_today_price = current_price
-        
-        # 정확도 산출 (단순 오차율 기반)
-        error_pct = abs(actual_today_price - past_predicted_price) / actual_today_price * 100
-        accuracy = max(0, 100 - error_pct)
-        
-        backtest_data = {
-            "past_date": past_date.strftime('%Y-%m-%d'),
-            "past_price": float(past_price),
-            "predicted_today_price": float(past_predicted_price),
-            "actual_today_price": float(actual_today_price),
-            "accuracy": float(accuracy)
-        }
+    # --- B. 과거 예측의 다중 백테스트 (오늘을 예측했던 과거 시점들 평가) ---
+    backtest_list = []
+    for h in [1, 3, 7, 15, 30, 90]:
+        if len(df) > h + 50:
+            df_h = df.copy()
+            df_h['Target_h'] = df_h['Close'].shift(-h)
+            train_df_h = df_h.dropna(subset=['Target_h']).copy()
+            if len(train_df_h) < 50:
+                continue
+                
+            if len(train_df_h) > 120:
+                X_train_h = train_df_h[features].iloc[-120:]
+                y_train_h = train_df_h['Target_h'].iloc[-120:]
+            else:
+                X_train_h = train_df_h[features]
+                y_train_h = train_df_h['Target_h']
+                
+            scaler_h = StandardScaler()
+            X_train_scaled_h = scaler_h.fit_transform(X_train_h)
+            model_h = ElasticNet(alpha=0.1, l1_ratio=0.5)
+            model_h.fit(X_train_scaled_h, y_train_h)
+            
+            past_idx = -1 - h
+            past_row = df_h.iloc[[past_idx]]
+            past_date = past_row.index[0]
+            past_price = past_row['Close'].values[0]
+            
+            X_past_h = past_row[features]
+            X_past_scaled_h = scaler_h.transform(X_past_h)
+            past_predicted_price = model_h.predict(X_past_scaled_h)[0]
+            
+            actual_today_price = current_price
+            error_pct = abs(actual_today_price - past_predicted_price) / actual_today_price * 100
+            accuracy = max(0, 100 - error_pct)
+            
+            backtest_list.append({
+                "days_ago": h,
+                "past_date": past_date.strftime('%Y-%m-%d'),
+                "past_price": float(past_price),
+                "predicted_today_price": float(past_predicted_price),
+                "actual_today_price": float(actual_today_price),
+                "accuracy": float(accuracy)
+            })
     
     return {
         "success": True,
@@ -147,7 +162,7 @@ def run_prediction(ticker, horizon_days=5):
         "horizon_days": horizon_days,
         "predicted_future_price": float(predicted_future_price),
         "expected_return_pct": float((predicted_future_price - current_price) / current_price * 100),
-        "backtest": backtest_data,
+        "backtest_list": backtest_list,
         "features_used": features
     }
 

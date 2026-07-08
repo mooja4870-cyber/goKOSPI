@@ -1422,8 +1422,12 @@ A. 아닙니다!
                 if (data.backtest) {
                     const bt = data.backtest;
                     const btAccColor = bt.accuracy >= 80 ? '#276749' : (bt.accuracy >= 60 ? '#c05621' : '#c53030');
+                    const maxVal = Math.max(bt.predicted_today_price, bt.actual_today_price);
+                    const predPct = (bt.predicted_today_price / maxVal) * 100;
+                    const actPct = (bt.actual_today_price / maxVal) * 100;
+
                     btHtml = `
-                        <div style="margin-top:0.8rem; border-top:1px dashed rgba(107,70,193,0.2); padding-top:0.8rem;">
+                        <div style="margin-bottom:0.8rem; border-bottom:1px dashed rgba(107,70,193,0.2); padding-bottom:0.8rem;">
                             <div style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.4rem;">
                                 🛡️ 백테스트 (1주일 전 과거 시점에서 오늘 가격을 예측했다면?)
                             </div>
@@ -1442,6 +1446,20 @@ A. 아닙니다!
                                         </div>
                                     </div>
                                 </div>
+                                <div style="margin-top:1rem; padding-top:0.8rem; border-top:1px solid rgba(0,0,0,0.05);">
+                                    <div style="display:flex; align-items:center; margin-bottom:0.4rem; font-size:0.75rem;">
+                                        <div style="width:50px; color:var(--text-secondary); font-weight:600;">AI 예측</div>
+                                        <div style="flex-grow:1; background:rgba(0,0,0,0.05); height:14px; border-radius:4px; margin:0 10px; overflow:hidden;">
+                                            <div style="width:${predPct}%; background:#6b46c1; height:100%; border-radius:4px; transition:width 1s ease-out;"></div>
+                                        </div>
+                                    </div>
+                                    <div style="display:flex; align-items:center; font-size:0.75rem;">
+                                        <div style="width:50px; color:var(--text-secondary); font-weight:600;">실제 주가</div>
+                                        <div style="flex-grow:1; background:rgba(0,0,0,0.05); height:14px; border-radius:4px; margin:0 10px; overflow:hidden;">
+                                            <div style="width:${actPct}%; background:#3182ce; height:100%; border-radius:4px; transition:width 1s ease-out;"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -1449,6 +1467,7 @@ A. 아닙니다!
                 
                 resEl.innerHTML = `
                     <div style="background:rgba(107,70,193,0.05); border:1px solid rgba(107,70,193,0.2); border-left:4px solid #6b46c1; border-radius:10px; padding:1rem; text-align:left;">
+                        ${btHtml}
                         <div style="font-size:0.85rem; font-weight:800; color:#6b46c1; margin-bottom:0.6rem;">
                             🔮 AI 1주일 뒤 미래 가격 예측 (${data.future_date} 예상)
                         </div>
@@ -1466,7 +1485,6 @@ A. 아닙니다!
                                 </div>
                             </div>
                         </div>
-                        ${btHtml}
                         <div style="font-size:0.65rem; color:var(--text-secondary); margin-top:0.6rem; text-align:right;">
                             * 분석 피처: MA, 볼린저밴드, RSI, MACD, Z-Score 등 10개 이상
                         </div>

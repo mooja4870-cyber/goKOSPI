@@ -1507,7 +1507,7 @@ A. 아닙니다!
                         const tooltipText = `최근 3일 동안의 단기 상승 에너지 강도가 최근 20일간의 평균 변동폭 대비 ${zVal}배 수준으로 과열되어 꼭대기(고점)에 도달했음을 의미합니다.`;
                         
                         li.innerHTML = `
-                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
                                 <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
                                 <div style="display:flex; gap:0.2rem;">
                                     <button title="차트" style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:var(--text-primary); transition:all 0.15s;" onmouseover="this.style.background='#fff';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(255,255,255,0.8)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); openChartModal('${item.ticker}', '${safeName}')">📈</button>
@@ -1544,7 +1544,7 @@ A. 아닙니다!
                         const tooltipText = `최근 20영업일 동안 가장 비싸게 도달했던 고가(${peakPriceFormatted}) 대비 현재 주가가 -${ddVal}% 만큼 아래로 꺾여 가격 거품이 빠진 저평가 상태입니다.`;
                         
                         li.innerHTML = `
-                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
                                 <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
                                 <div style="display:flex; gap:0.2rem;">
                                     <button title="차트" style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:var(--text-primary); transition:all 0.15s;" onmouseover="this.style.background='#fff';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(255,255,255,0.8)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); openChartModal('${item.ticker}', '${safeName}')">📈</button>

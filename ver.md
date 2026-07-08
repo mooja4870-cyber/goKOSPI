@@ -1,5 +1,18 @@
 # Version History
 
+## v2.9.6
+
+Date: 2026-07-08
+
+### 변경 내용
+* 좌측 매수/매도 리스트 종목별 아이템 내의 이모지 버튼(차트, AI예측)들을 우측 끝으로 정렬(`justify-content: space-between` 적용)하여 시각적 안정감 강화
+
+### 수정 파일
+* templates/index.html
+
+### 비고
+* UI 레이아웃 디테일 개선 (피드백 반영)
+
 ## v2.9.5
 
 Date: 2026-07-08

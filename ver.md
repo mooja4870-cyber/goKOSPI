@@ -1,5 +1,28 @@
 # Version History
 
+## v1.9.0
+
+Date: 2026-07-08
+
+### 변경 내용
+
+* 글로벌 멀티 자산 리밸런싱 포탈 진화를 위한 **6대 자산군 탭 인터페이스 적용** (`templates/index.html`)
+* 6대 탭: 🇰🇷 코스피 / 🇰🇷 코스닥 / 🇺🇸 다우지수 / 🇺🇸 S&P 500 / 🪙 금·은 / ₿ 가상자산
+* 5-스레드 병렬 다운로더(`ThreadPoolExecutor`) 도입으로 190개 대량 종목 수집 속도를 15초 내외로 단축 (`collector.py`)
+* 백엔드 API `/api/signals?category=...` 세그먼트 캐싱 라우트 구현 (`app.py`)
+* 자산군 특성별 시장 분위기(Market Mood) Z-Score 해석 가이드 다변화 주입
+
+### 수정 파일
+
+* collector.py
+* app.py
+* templates/index.html
+* ver.md
+
+### 비고
+
+* 글로벌 멀티 탭 투자 나침반 플랫폼 리뉴얼 릴리즈 완료
+
 ## v1.8.1
 
 Date: 2026-07-08

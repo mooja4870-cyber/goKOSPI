@@ -4,17 +4,24 @@ import math
 from flask import Flask, render_template, jsonify, request
 import FinanceDataReader as fdr
 import yfinance as yf
-from collector import fetch_market_data, get_ticker_name
+from collector import fetch_market_data, get_ticker_name, CATEGORY_TICKERS
 from engine import analyze_last_signal
 
 app = Flask(__name__)
 
-# 분석 결과 캐시용 메모리
-signal_cache = []
+# 분석 결과 캐시용 메모리 (6대 카테고리별 분할 저장)
+signal_cache = {
+    "KOSPI": [],
+    "KOSDAQ": [],
+    "DOW": [],
+    "SP500": [],
+    "COMMODITY": [],
+    "CRYPTO": []
+}
 cache_lock = threading.Lock()
 is_loading = True
 
-# KRX 전 종목 리스트 캐시 (메모리 로딩)
+# KRX 전 종목 리스트 캐시 (국내 주식 및 ETF 검색용 메모리 로딩)
 krx_stocks = []
 
 def init_krx_stocks():
@@ -83,41 +90,53 @@ def init_krx_stocks():
 
 def update_signal_cache_worker():
     """
-    백그라운드에서 주기적으로 50대 종목 시세를 수집 및 분석하여 캐시를 동기화합니다.
+    백그라운드에서 주기적으로 6대 자산군 전 종목의 시세를 병렬 수집 및 분석하여 캐시를 갱신합니다.
     """
     global signal_cache, is_loading
     while True:
         try:
-            print("[*] 백그라운드 캐시 갱신 시작...")
-            # 데이터 수집 (최근 3개월)
-            market_data = fetch_market_data(period="3mo")
+            print("[*] 백그라운드 6대 자산군 캐시 갱신 시작...")
+            temp_cache_all = {}
             
-            temp_cache = []
-            if market_data:
-                for ticker, df in market_data.items():
-                    analysis = analyze_last_signal(df, ticker)
-                    analysis["name"] = get_ticker_name(ticker)
-                    
-                    # NaN 값 안전 정제 (JSON 직렬화 및 프론트엔드 오류 방지)
-                    z = analysis.get("z_score", 0.0)
-                    if math.isnan(z):
-                        analysis["z_score"] = 0.0
+            for category in signal_cache.keys():
+                market_data = fetch_market_data(category, period="3mo")
+                category_cache = []
+                
+                if market_data:
+                    for ticker, df in market_data.items():
+                        analysis = analyze_last_signal(df, ticker)
+                        analysis["name"] = get_ticker_name(category, ticker)
                         
-                    temp_cache.append(analysis)
+                        # NaN 값 안전 정제
+                        z = analysis.get("z_score", 0.0)
+                        if math.isnan(z):
+                            analysis["z_score"] = 0.0
+                            
+                        # drawdown_pct NaN 값 정제
+                        dd = analysis.get("drawdown_pct", 0.0)
+                        if math.isnan(dd):
+                            analysis["drawdown_pct"] = 0.0
+                            
+                        category_cache.append(analysis)
+                    
+                    # 원래 정의된 순서대로 정렬 고정
+                    order_list = list(CATEGORY_TICKERS[category].keys())
+                    tickers_order = {ticker: idx for idx, ticker in enumerate(order_list)}
+                    category_cache = sorted(category_cache, key=lambda x: tickers_order.get(x["ticker"], 999))
+                    
+                temp_cache_all[category] = category_cache
+            
+            # 한 번에 락 잡고 교체
+            with cache_lock:
+                for category, cached_list in temp_cache_all.items():
+                    signal_cache[category] = cached_list
+                is_loading = False
                 
-                # 원래 TICKERS 정의 순서(시가총액 50대 종목 순위)대로 캐시 정렬
-                from collector import TICKERS
-                tickers_order = {ticker: idx for idx, ticker in enumerate(list(TICKERS.keys()) + ["^KS11"])}
-                temp_cache = sorted(temp_cache, key=lambda x: tickers_order.get(x["ticker"], 999))
-                
-                with cache_lock:
-                    signal_cache = temp_cache
-                    is_loading = False
-            print(f"[*] 백그라운드 캐시 갱신 완료 (총 {len(signal_cache)}개 종목)")
+            print("[*] 백그라운드 6대 자산군 캐시 갱신 완료!")
         except Exception as e:
             print(f"[!] 캐시 갱신 도중 예외 발생: {e}")
             
-        # 30분 주기로 캐시 갱신 (서버 부하 및 야후 파이낸스 차단 우려 완화)
+        # 30분 주기로 캐시 갱신
         time.sleep(1800)
 
 @app.route("/")
@@ -127,37 +146,66 @@ def index():
 @app.route("/api/signals")
 def get_signals():
     global signal_cache, is_loading
+    category = request.args.get("category", "KOSPI").upper()
+    if category not in signal_cache:
+        category = "KOSPI"
+        
     with cache_lock:
         return jsonify({
             "loading": is_loading,
-            "data": signal_cache,
+            "data": signal_cache[category],
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
         })
 
 @app.route("/api/search_ticker")
 def search_ticker():
     """
-    코스피/코스닥 전 종목명 검색 API
+    코스피/코스닥/ETF 전 종목명 검색 API (한글 검색) + 미국 지수 구성주 및 가상자산도 검색 범위에 융합
     """
     query = request.args.get("query", "").strip()
     if not query:
         return jsonify([])
     
-    # 키워드가 들어간 종목들 검색 (최대 20개까지만 리턴하여 속도 및 사용성 극대화)
-    results = [s for s in krx_stocks if query.lower() in s["name"].lower()]
-    return jsonify(results[:20])
+    results = []
+    # 1. 미국 주식, 원자재, 크립토 등 정의된 수동 사전을 먼저 매칭
+    for cat, tickers_dict in CATEGORY_TICKERS.items():
+        if cat in ["KOSPI", "KOSDAQ"]:
+            continue
+        for ticker, name in tickers_dict.items():
+            if query.lower() in name.lower() or query.lower() in ticker.lower():
+                results.append({
+                    "name": f"[{cat}] {name}",
+                    "ticker": ticker
+                })
+                
+    # 2. 국내 KRX/ETF 리스트 검색 병합
+    krx_matches = [
+        {"name": s["name"], "ticker": s["ticker"]} 
+        for s in krx_stocks if query.lower() in s["name"].lower()
+    ]
+    results.extend(krx_matches)
+    
+    # 중복 제거 및 최대 20개까지만 리턴
+    seen = set()
+    unique_results = []
+    for r in results:
+        if r["ticker"] not in seen:
+            seen.add(r["ticker"])
+            unique_results.append(r)
+            
+    return jsonify(unique_results[:20])
 
 @app.route("/api/inspect_ticker")
 def inspect_ticker():
     """
-    특정 종목에 대해 실시간 다운로드 및 Z-Score 신호 분석 결과 제공 API
+    특정 종목에 대해 실시간 Z-Score 신호 분석 결과 제공 API (주식, 원자재, 암호화폐 전천후 진단)
     """
     ticker = request.args.get("ticker", "").strip()
     if not ticker:
         return jsonify({"success": False, "error": "티커 파라미터가 누락되었습니다."})
         
     try:
-        # 야후 파이낸스에서 실시간 3개월 시세 다운로드 (타임아웃 4초)
+        # 야후 파이낸스에서 실시간 3개월 시세 다운로드
         ticker_obj = yf.Ticker(ticker)
         df = ticker_obj.history(period="3mo", timeout=4)
         
@@ -168,20 +216,34 @@ def inspect_ticker():
         if df_cleaned.empty:
             return jsonify({"success": False, "error": f"{ticker}의 종가 데이터가 비어있습니다."})
             
-        # 실시간 분석
+        # Z-Score 신호 계산
         analysis = analyze_last_signal(df_cleaned, ticker)
         
-        # 종목명 역조회
+        # 1. 6대 카테고리 정의에서 한글명 탐색
         name = ticker
-        match = next((s for s in krx_stocks if s["ticker"] == ticker), None)
-        if match:
-            name = match["name"]
+        found = False
+        for cat, tickers_dict in CATEGORY_TICKERS.items():
+            if ticker in tickers_dict:
+                name = tickers_dict[ticker]
+                found = True
+                break
+                
+        # 2. 전종목 사전에서 한글명 탐색
+        if not found:
+            match = next((s for s in krx_stocks if s["ticker"] == ticker), None)
+            if match:
+                name = match["name"]
+                
         analysis["name"] = name
         
-        # NaN 값 정제
+        # NaN 값 안전 정제
         z = analysis.get("z_score", 0.0)
         if math.isnan(z):
             analysis["z_score"] = 0.0
+            
+        dd = analysis.get("drawdown_pct", 0.0)
+        if math.isnan(dd):
+            analysis["drawdown_pct"] = 0.0
             
         analysis["success"] = True
         return jsonify(analysis)
@@ -207,7 +269,6 @@ def get_backtest_summary():
     })
 
 if __name__ == "__main__":
-    # KRX 종목 사전 로드
     init_krx_stocks()
     
     # 백그라운드 캐시 갱신 스레드 기동

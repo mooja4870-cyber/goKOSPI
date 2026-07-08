@@ -295,6 +295,44 @@
         #search-suggestions li:last-child {
             border-bottom: none;
         }
+
+        /* 6대 자산군 탭 디자인 */
+        .tabs-container {
+            max-width: 1400px;
+            margin: 0.5rem auto 1.5rem auto;
+            display: flex;
+            gap: 0.8rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-button {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.92rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-button:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+        }
+
+        .tab-button.active {
+            background: rgba(52, 199, 89, 0.12);
+            color: var(--accent-green);
+            border-color: rgba(52, 199, 89, 0.35);
+            box-shadow: 0 4px 20px rgba(52, 199, 89, 0.15);
+        }
     </style>
 </head>
 <body>
@@ -303,6 +341,16 @@
         <h1>🧭 goKOSPI 실시간 투자 나침반</h1>
         <div class="status-badge" id="refresh-time">지수 동기화 중...</div>
     </header>
+
+    <!-- 6대 자산군 전환 탭 -->
+    <div class="tabs-container">
+        <button class="tab-button active" id="tab-KOSPI" onclick="switchCategory('KOSPI')">🇰🇷 코스피</button>
+        <button class="tab-button" id="tab-KOSDAQ" onclick="switchCategory('KOSDAQ')">🇰🇷 코스닥</button>
+        <button class="tab-button" id="tab-DOW" onclick="switchCategory('DOW')">🇺🇸 다우지수</button>
+        <button class="tab-button" id="tab-SP500" onclick="switchCategory('SP500')">🇺🇸 S&P 500</button>
+        <button class="tab-button" id="tab-COMMODITY" onclick="switchCategory('COMMODITY')">🪙 금·은</button>
+        <button class="tab-button" id="tab-CRYPTO" onclick="switchCategory('CRYPTO')">₿ 가상자산</button>
+    </div>
 
     <!-- 최상단: 의사결정 3대 경로 카드 -->
     <div class="action-grid">
@@ -601,6 +649,23 @@
             renderScannerTable();
         }
 
+        // 현재 선택된 자산군 상태 변수
+        let currentCategory = 'KOSPI';
+
+        // 탭 전환 이벤트 핸들러
+        function switchCategory(category) {
+            currentCategory = category;
+            
+            // 모든 탭 버튼에서 active 제거 후 선택된 탭에 부여
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById('tab-' + category).classList.add('active');
+            
+            // 데이터 비동기 재로드
+            loadDashboard();
+        }
+
         async function loadDashboard() {
             try {
                 // 1. 백테스트 개요 로드
@@ -608,8 +673,8 @@
                 const btData = await btRes.json();
                 document.getElementById('bt-hit-rate').innerText = btData.hit_rate + '%';
 
-                // 2. 실시간 신호 분석 데이터 로드
-                const signalRes = await fetch('/api/signals');
+                // 2. 실시간 신호 분석 데이터 로드 (선택된 카테고리 적용)
+                const signalRes = await fetch(`/api/signals?category=${currentCategory}`);
                 const signalData = await signalRes.json();
                 
                 if (signalData.loading) {
@@ -619,10 +684,21 @@
 
                 document.getElementById('refresh-time').innerText = '동기화 시각: ' + signalData.timestamp;
 
-                // 3. 데이터 분류 (매도/매도추천/지수 상태)
+                // 3. 데이터 분류 (매도/매수추천/지수 상태)
                 const sellList = [];
                 const buyList = [];
-                let kospiIndexInfo = null;
+                let indexInfo = null;
+
+                // 카테고리별 지수 티커 매핑
+                const indexTickerMap = {
+                    "KOSPI": "^KS11",
+                    "KOSDAQ": "^KQ11",
+                    "DOW": "^DJI",
+                    "SP500": "^GSPC",
+                    "COMMODITY": "GC=F",
+                    "CRYPTO": "BTC-USD"
+                };
+                const targetIndexTicker = indexTickerMap[currentCategory];
 
                 // 원본 인덱스 매칭하여 캐시 데이터셋 수립
                 cachedSignals = signalData.data.map((item, idx) => ({
@@ -631,8 +707,8 @@
                 }));
 
                 cachedSignals.forEach(item => {
-                    if (item.ticker === '^KS11') {
-                        kospiIndexInfo = item;
+                    if (item.ticker === targetIndexTicker) {
+                        indexInfo = item;
                     } else if (item.signal === 'STRONG_SELL' || item.signal === 'OVERHEAT') {
                         sellList.push(item);
                     } else if (item.signal === 'STRONG_BUY' || item.signal === 'BUY' || item.signal === 'MILD_BUY') {
@@ -640,41 +716,51 @@
                     }
                 });
 
-                // 3-A. 시장 분위기 파싱 (KOSPI 종합 지수 기반)
+                // 3-A. 자산군별 시장 분위기(Market Mood) 현지화 파싱
                 const marketTextEl = document.getElementById('market-status-text');
                 const marketDescEl = document.getElementById('market-desc');
                 
-                if (kospiIndexInfo) {
-                    const z = kospiIndexInfo.z_score;
+                if (indexInfo) {
+                    const z = indexInfo.z_score;
+                    const catName = document.getElementById('tab-' + currentCategory).innerText.substring(2); // 이모지 제거한 한글명
+                    
                     if (z >= 2.0) {
-                        marketTextEl.innerText = "🚨 시장 과열 경보";
+                        marketTextEl.innerText = `🚨 ${catName} 과열 경보`;
                         marketTextEl.style.color = "var(--accent-red)";
-                        marketDescEl.innerHTML = `현재 코스피 종합 지수 Z-Score가 <strong>${formatZScore(z)}</strong>로 매우 높습니다. 조만간 시장 전반에 강제 물량 조정이 개시될 확률이 80%를 상회하므로 현금 비중 확대를 권장합니다.`;
-                    } else if (kospiIndexInfo.signal === 'OVERHEATED_HOLD') {
-                        marketTextEl.innerText = "📉 조정 진행 중";
-                        marketTextEl.style.color = "var(--accent-blue)";
-                        marketDescEl.innerHTML = `지수가 고점 대비 과열을 덜어내는 조정기에 있습니다. 조정 완료 신호가 감지될 때까지 신규 적극 진입을 미루십시오.`;
+                        
+                        if (currentCategory === 'CRYPTO') {
+                            marketDescEl.innerHTML = `현재 가상자산 지수 Z-Score가 <strong>${formatZScore(z)}</strong>로 매우 높은 과열 상태입니다. 크립토 자산 특유의 급격한 매물 투하 및 폭락 리스크가 존재하므로 추가 매수를 멈추고 일부 현금화를 권장합니다.`;
+                        } else if (currentCategory === 'COMMODITY') {
+                            marketDescEl.innerHTML = `현재 국제 원자재 지수 Z-Score가 <strong>${formatZScore(z)}</strong>로 단기 버블 영역입니다. 안전자산 선호 심리가 극대화된 상태이나 기술적 조정 위험이 있으므로 포트폴리오 비중을 조절하십시오.`;
+                        } else {
+                            marketDescEl.innerHTML = `현재 ${catName} 종합 지수 Z-Score가 <strong>${formatZScore(z)}</strong>로 과열 상태입니다. 조만간 지수 전반에 강제 물량 조정이 개시될 확률이 80% 이상이므로 적극적인 신규 매수를 자제하세요.`;
+                        }
+                    } else if (z <= -2.0) {
+                        marketTextEl.innerText = `🟢 ${catName} 과매도 기회`;
+                        marketTextEl.style.color = "var(--accent-green)";
+                        marketDescEl.innerHTML = `현재 ${catName} 종합 지수 Z-Score가 <strong>${formatZScore(z)}</strong>로 억눌린 과매도 상태입니다. 시장의 공포가 극대화되었으나 중장기 분할 진입하기에 안전 마진이 두터운 최적의 저점 구간입니다.`;
                     } else {
-                        marketTextEl.innerText = "⚖️ 안정적 중립 장세";
+                        marketTextEl.innerText = `⚖️ ${catName} 안정적 중립`;
                         marketTextEl.style.color = "var(--accent-blue)";
-                        marketDescEl.innerHTML = `현재 지수 Z-Score는 <strong>${formatZScore(z)}</strong>로 안전 권역입니다. 지수 충격 위험이 적으므로 개별 대형주의 개별 리밸런싱 위주로 자유롭게 진입이 가능합니다.`;
+                        marketDescEl.innerHTML = `현재 지수 Z-Score는 <strong>${formatZScore(z)}</strong>로 안전 권역에 상주하고 있습니다. 지수 충격 위험이 적으므로 개별 대형 우량주 및 자산들의 리밸런싱 시그널 위주로 자유로운 진입이 가능합니다.`;
                     }
                 } else {
                     marketTextEl.innerText = "⚖️ 정상 안정 국면";
-                    marketDescEl.innerText = "종합 지수가 정상 변동 범위 내에 상주하고 있습니다. 개별 종목 매매에 집중하기 좋은 타이밍입니다.";
+                    marketDescEl.innerText = "종합 지수가 정상 변동 범위 내에 있습니다. 각 우량주들의 개별 리밸런싱 판단 지침에 집중하기 좋은 타이밍입니다.";
                 }
 
                 // 3-B. 매도 제안 리스트 출력
                 const sellEl = document.getElementById('sell-recommendations');
                 sellEl.innerHTML = '';
                 if (sellList.length === 0) {
-                    sellEl.innerHTML = '<div class="empty-message">🎉 현재 과열권에 도달한 대형주가 없습니다. 마음 놓고 기존 포지션을 홀딩하셔도 좋습니다.</div>';
+                    sellEl.innerHTML = '<div class="empty-message">🎉 현재 과열 및 익절권장에 도달한 종목이 없습니다. 마음 놓고 편안하게 홀딩하셔도 좋습니다.</div>';
                 } else {
                     sellList.forEach(item => {
                         const li = document.createElement('li');
+                        const label = item.signal === 'STRONG_SELL' ? '🔴 강력매도' : '🟠 익절권장';
                         li.innerHTML = `
                             <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
-                            <span style="color:var(--accent-red); font-weight:bold;">과열 (Z: ${formatZScore(item.z_score, 1)}) → 익절 권장</span>
+                            <span style="color:var(--accent-red); font-weight:bold;">${label} (Z: ${formatZScore(item.z_score, 1)})</span>
                         `;
                         sellEl.appendChild(li);
                     });
@@ -684,19 +770,23 @@
                 const buyEl = document.getElementById('buy-recommendations');
                 buyEl.innerHTML = '';
                 if (buyList.length === 0) {
-                    buyEl.innerHTML = '<div class="empty-message">💤 조정을 마치고 신호를 주는 종목이 아직 없습니다. 신규 자금 진입을 서두르지 말고 대기하세요.</div>';
+                    buyEl.innerHTML = '<div class="empty-message">💤 조정을 마치고 신규 진입 기회를 주는 종목이 아직 없습니다. 현금을 쥐고 대기하세요.</div>';
                 } else {
                     buyList.forEach(item => {
                         const li = document.createElement('li');
+                        let label = '🩵 관심매집';
+                        if (item.signal === 'STRONG_BUY') label = '💚 강력매수';
+                        else if (item.signal === 'BUY') label = '🟢 매수시그널';
+                        
                         li.innerHTML = `
                             <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
-                            <span style="color:var(--accent-green); font-weight:bold;">조정완료 (하락: -${item.drawdown_pct.toFixed(1)}%) → 진입</span>
+                            <span style="color:var(--accent-green); font-weight:bold;">${label} (하락: -${item.drawdown_pct.toFixed(1)}%)</span>
                         `;
                         buyEl.appendChild(li);
                     });
                 }
 
-                // 4. 셀렉트 박스의 현재 선택된 정렬에 맞춰 렌더링
+                // 4. 셀렉트 박스의 현재 선택된 정렬에 맞춰 테이블 렌더링
                 handleSortChange();
 
             } catch (err) {
@@ -706,7 +796,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             loadDashboard();
-            setInterval(loadDashboard, 30000); // 30초 주기
+            setInterval(loadDashboard, 30000); // 30초 주기 자동 동기화
         });
     </script>
 </body>

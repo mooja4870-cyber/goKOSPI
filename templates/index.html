@@ -1422,6 +1422,10 @@ A. 아닙니다!
                 if (data.backtest) {
                     const bt = data.backtest;
                     const btAccColor = bt.accuracy >= 80 ? '#276749' : (bt.accuracy >= 60 ? '#c05621' : '#c53030');
+                    const maxVal = Math.max(bt.predicted_today_price, bt.actual_today_price);
+                    const predPct = (bt.predicted_today_price / maxVal) * 100;
+                    const actPct = (bt.actual_today_price / maxVal) * 100;
+
                     btHtml = `
                         <div style="margin-top:0.8rem; border-top:1px dashed rgba(107,70,193,0.2); padding-top:0.8rem;">
                             <div style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.4rem;">
@@ -1439,6 +1443,20 @@ A. 아닙니다!
                                         <div style="font-size:1rem; font-weight:700;">
                                             ${Math.floor(bt.predicted_today_price).toLocaleString()}원
                                             <div style="font-size:0.75rem; font-weight:600; margin-top:0.2rem;">👉 예측 일치도: <span style="color:${btAccColor};">${bt.accuracy.toFixed(1)}%</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="margin-top:1rem; padding-top:0.8rem; border-top:1px solid rgba(0,0,0,0.05);">
+                                    <div style="display:flex; align-items:center; margin-bottom:0.4rem; font-size:0.75rem;">
+                                        <div style="width:50px; color:var(--text-secondary); font-weight:600;">AI 예측</div>
+                                        <div style="flex-grow:1; background:rgba(0,0,0,0.05); height:14px; border-radius:4px; margin:0 10px; overflow:hidden;">
+                                            <div style="width:${predPct}%; background:#6b46c1; height:100%; border-radius:4px; transition:width 1s ease-out;"></div>
+                                        </div>
+                                    </div>
+                                    <div style="display:flex; align-items:center; font-size:0.75rem;">
+                                        <div style="width:50px; color:var(--text-secondary); font-weight:600;">실제 주가</div>
+                                        <div style="flex-grow:1; background:rgba(0,0,0,0.05); height:14px; border-radius:4px; margin:0 10px; overflow:hidden;">
+                                            <div style="width:${actPct}%; background:#3182ce; height:100%; border-radius:4px; transition:width 1s ease-out;"></div>
                                         </div>
                                     </div>
                                 </div>

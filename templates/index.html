@@ -1551,7 +1551,7 @@ A. 아닙니다!
                                     <button title="AI 예측" style="background:rgba(107,70,193,0.08); border:1px solid rgba(107,70,193,0.25); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:#6b46c1; transition:all 0.15s; font-weight:600;" onmouseover="this.style.background='rgba(107,70,193,0.15)';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(107,70,193,0.08)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); document.getElementById('ticker-search').value='${item.ticker}'; selectSearchTicker('${item.ticker}', '${safeName}', true);">🔮</button>
                                 </div>
                             </div>
-                            <span class="tooltip" data-tooltip="${tooltipText}" style="color:var(--accent-green); font-weight:bold; border-bottom:1px dotted var(--accent-green); cursor:help;" onclick="event.stopPropagation();">${label} (하락: -${ddVal}%)</span>
+                            <span class="tooltip" data-tooltip="${tooltipText}" style="color:var(--accent-green); font-weight:bold; border-bottom:1px dotted var(--accent-green); cursor:help;" onclick="event.stopPropagation();">${label} (-${ddVal}%)</span>
                         `;
                         buyEl.appendChild(li);
                     });

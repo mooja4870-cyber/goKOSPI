@@ -1,7 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge, ElasticNet
 from sklearn.preprocessing import StandardScaler
 from datetime import datetime, timedelta
 
@@ -82,14 +82,19 @@ def run_prediction(ticker, horizon_days=5):
     if len(train_df) < 50:
         return {"success": False, "error": "학습 데이터가 부족합니다."}
         
-    X_train = train_df[features]
-    y_train = train_df['Target']
+    # --- Rolling Window 기반 동적 리밸런싱 (최근 120 영업일) ---
+    if len(train_df) > 120:
+        X_train = train_df[features].iloc[-120:]
+        y_train = train_df['Target'].iloc[-120:]
+    else:
+        X_train = train_df[features]
+        y_train = train_df['Target']
     
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     
-    # Ridge Regression 사용 (다중공선성 완화)
-    model = Ridge(alpha=1.0)
+    # ElasticNet Regression 사용 (L1+L2 정규화 기반 동적 가중치 할당)
+    model = ElasticNet(alpha=0.1, l1_ratio=0.5)
     model.fit(X_train_scaled, y_train)
     
     # --- A. 현재 시점에서 미래 가격 예측 ---

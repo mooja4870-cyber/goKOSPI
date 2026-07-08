@@ -1032,7 +1032,7 @@ A. 아닙니다!
         }
 
         // 종목 선택 후 실시간 야후파이낸스 진단 판독 기능 (백엔드 실시간 스캔 API 연동)
-        async function selectSearchTicker(ticker, name) {
+        async function selectSearchTicker(ticker, name = '', autoAIPredict = false) {
             const suggestionsEl = document.getElementById('search-suggestions');
             const searchInput = document.getElementById('ticker-search');
             const inspectorEl = document.getElementById('search-result-inspector');
@@ -1042,6 +1042,9 @@ A. 아닙니다!
             suggestionsEl.innerHTML = '';
             
             searchInput.value = name;
+
+            // 해당 영역으로 스크롤 이동 (사용자 인지 향상)
+            inspectorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             // 로딩 상태 표시
             inspectorEl.innerHTML = `
@@ -1505,7 +1508,7 @@ A. 아닙니다!
                                 <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
                                 <div style="display:flex; gap:0.2rem;">
                                     <button style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:var(--text-primary); transition:all 0.15s;" onmouseover="this.style.background='#fff';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(255,255,255,0.8)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); openChartModal('${item.ticker}', '${safeName}')">📈 차트</button>
-                                    <button style="background:rgba(107,70,193,0.08); border:1px solid rgba(107,70,193,0.25); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:#6b46c1; transition:all 0.15s; font-weight:600;" onmouseover="this.style.background='rgba(107,70,193,0.15)';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(107,70,193,0.08)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); document.getElementById('ticker-search').value='${item.ticker}'; selectSearchTicker('${item.ticker}', true);">🔮 AI예측</button>
+                                    <button style="background:rgba(107,70,193,0.08); border:1px solid rgba(107,70,193,0.25); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:#6b46c1; transition:all 0.15s; font-weight:600;" onmouseover="this.style.background='rgba(107,70,193,0.15)';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(107,70,193,0.08)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); document.getElementById('ticker-search').value='${item.ticker}'; selectSearchTicker('${item.ticker}', '${safeName}', true);">🔮 AI예측</button>
                                 </div>
                             </div>
                             <span class="tooltip" data-tooltip="${tooltipText}" style="color:var(--accent-pink); font-weight:bold; border-bottom:1px dotted var(--accent-pink); cursor:help;" onclick="event.stopPropagation();">${label} (Z: ${zVal})</span>
@@ -1542,7 +1545,7 @@ A. 아닙니다!
                                 <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
                                 <div style="display:flex; gap:0.2rem;">
                                     <button style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:var(--text-primary); transition:all 0.15s;" onmouseover="this.style.background='#fff';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(255,255,255,0.8)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); openChartModal('${item.ticker}', '${safeName}')">📈 차트</button>
-                                    <button style="background:rgba(107,70,193,0.08); border:1px solid rgba(107,70,193,0.25); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:#6b46c1; transition:all 0.15s; font-weight:600;" onmouseover="this.style.background='rgba(107,70,193,0.15)';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(107,70,193,0.08)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); document.getElementById('ticker-search').value='${item.ticker}'; selectSearchTicker('${item.ticker}', true);">🔮 AI예측</button>
+                                    <button style="background:rgba(107,70,193,0.08); border:1px solid rgba(107,70,193,0.25); border-radius:4px; font-size:0.65rem; padding:0.15rem 0.35rem; cursor:pointer; color:#6b46c1; transition:all 0.15s; font-weight:600;" onmouseover="this.style.background='rgba(107,70,193,0.15)';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(107,70,193,0.08)';this.style.transform='scale(1)'" onclick="event.stopPropagation(); document.getElementById('ticker-search').value='${item.ticker}'; selectSearchTicker('${item.ticker}', '${safeName}', true);">🔮 AI예측</button>
                                 </div>
                             </div>
                             <span class="tooltip" data-tooltip="${tooltipText}" style="color:var(--accent-green); font-weight:bold; border-bottom:1px dotted var(--accent-green); cursor:help;" onclick="event.stopPropagation();">${label} (하락: -${ddVal}%)</span>

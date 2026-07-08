@@ -8,19 +8,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #121214;
-            --card-bg: rgba(22, 22, 26, 0.85);
-            --border-color: rgba(224, 168, 153, 0.18);
-            --text-primary: #f3f4f6;
-            --text-secondary: #a1a1aa;
-            --accent-pink: #e0a899;
-            --accent-blue: #60a5fa;
-            --accent-red: #f43f5e;
-            --accent-green: #34d399;
-            --pink-glow: 0 8px 32px rgba(224, 168, 153, 0.12);
-            --blue-glow: 0 8px 32px rgba(96, 165, 250, 0.12);
-            --green-glow: 0 8px 32px rgba(52, 211, 153, 0.12);
-            --red-glow: 0 8px 32px rgba(244, 63, 94, 0.12);
+            --bg-color: #eef2f7;
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --border-color: rgba(255, 255, 255, 0.85);
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --accent-pink: #d99b82;
+            --accent-blue: #3182ce;
+            --accent-red: #e53e3e;
+            --accent-green: #38a169;
+            --pink-glow: 0 8px 24px rgba(217, 155, 130, 0.12);
+            --blue-glow: 0 8px 24px rgba(49, 130, 206, 0.12);
+            --green-glow: 0 8px 24px rgba(56, 161, 105, 0.12);
+            --red-glow: 0 8px 24px rgba(229, 62, 62, 0.12);
         }
 
         * {
@@ -36,8 +36,8 @@
             min-height: 100vh;
             padding: 2rem;
             overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% -10%, rgba(192, 132, 252, 0.12) 0%, transparent 65%),
-                              radial-gradient(circle at 90% 80%, rgba(224, 168, 153, 0.05) 0%, transparent 50%);
+            background-image: radial-gradient(circle at 50% -10%, rgba(217, 155, 130, 0.08) 0%, transparent 60%),
+                              radial-gradient(circle at 90% 80%, rgba(49, 130, 206, 0.04) 0%, transparent 40%);
             background-attachment: fixed;
         }
 
@@ -47,27 +47,30 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             padding-bottom: 1.2rem;
         }
 
         h1 {
             font-size: 2rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #ffffff 40%, var(--accent-pink) 100%);
+            background: linear-gradient(135deg, #2d3748 40%, var(--accent-pink) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .status-badge {
-            background-color: rgba(255, 255, 255, 0.03);
-            color: var(--text-secondary);
+            background-color: rgba(255, 255, 255, 0.6);
+            color: var(--text-primary);
             padding: 0.5rem 1rem;
             border-radius: 9999px;
             font-size: 0.8rem;
-            font-weight: 500;
-            border: 1px solid var(--border-color);
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(8px);
+            box-shadow: 
+                3px 3px 6px rgba(163, 177, 198, 0.2), 
+                -3px -3px 6px rgba(255, 255, 255, 0.7);
         }
 
         /* 3단 의사결정 카드 그리드 (최상단) */
@@ -111,13 +114,13 @@
 
         /* 카드별 테마 지정 */
         .action-card.market::before { background: var(--accent-blue); }
-        .action-card.market { box-shadow: var(--blue-glow); }
+        .action-card.market { box-shadow: 9px 9px 16px rgba(163, 177, 198, 0.35), -9px -9px 16px rgba(255, 255, 255, 0.8), inset 0 -4px 0 rgba(49, 130, 206, 0.2); }
         
         .action-card.sell::before { background: var(--accent-pink); }
-        .action-card.sell { box-shadow: var(--pink-glow); border-color: rgba(255, 42, 122, 0.2); }
+        .action-card.sell { box-shadow: 9px 9px 16px rgba(163, 177, 198, 0.35), -9px -9px 16px rgba(255, 255, 255, 0.8), inset 0 -4px 0 rgba(217, 155, 130, 0.2); border-color: var(--border-color); }
         
         .action-card.buy::before { background: var(--accent-green); }
-        .action-card.buy { box-shadow: var(--green-glow); }
+        .action-card.buy { box-shadow: 9px 9px 16px rgba(163, 177, 198, 0.35), -9px -9px 16px rgba(255, 255, 255, 0.8), inset 0 -4px 0 rgba(56, 161, 105, 0.2); }
 
         .card-header-desc {
             font-size: 0.85rem;
@@ -176,10 +179,15 @@
 
         .card {
             background: var(--card-bg);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 1.5rem;
+            box-shadow: 
+                9px 9px 16px rgba(163, 177, 198, 0.45), 
+                -9px -9px 16px rgba(255, 255, 255, 0.85),
+                inset 1px 1px 0px rgba(255, 255, 255, 0.9);
         }
 
         .card-title {
@@ -225,16 +233,16 @@
             font-weight: 700;
         }
 
-        .badge.strong-sell { background: rgba(244, 63, 94, 0.18); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.4); text-shadow: 0 0 6px rgba(244, 63, 94, 0.4); font-weight: 700; }
-        .badge.overheat    { background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3); }
-        .badge.caution     { background: rgba(253, 224, 71, 0.12); color: #fde047; border: 1px solid rgba(253, 224, 71, 0.25); }
-        .badge.hold        { background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); border: 1px solid rgba(255, 255, 255, 0.06); }
-        .badge.mild-buy    { background: rgba(96, 165, 250, 0.12); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.25); }
-        .badge.buy         { background: rgba(52, 211, 153, 0.12); color: var(--accent-green); border: 1px solid rgba(52, 211, 153, 0.25); }
-        .badge.strong-buy  { background: rgba(52, 211, 153, 0.22); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.45); text-shadow: 0 0 6px rgba(52, 211, 153, 0.4); font-weight: 700; }
+        .badge.strong-sell { background: rgba(229, 62, 62, 0.12); color: #e53e3e; border: 1px solid rgba(229, 62, 62, 0.25); font-weight: 700; }
+        .badge.overheat    { background: rgba(221, 107, 32, 0.12); color: #dd6b20; border: 1px solid rgba(221, 107, 32, 0.25); }
+        .badge.caution     { background: rgba(214, 158, 46, 0.1); color: #b7791f; border: 1px solid rgba(214, 158, 46, 0.2); }
+        .badge.hold        { background: rgba(113, 128, 150, 0.08); color: #4a5568; border: 1px solid rgba(113, 128, 150, 0.12); }
+        .badge.mild-buy    { background: rgba(49, 130, 206, 0.12); color: #3182ce; border: 1px solid rgba(49, 130, 206, 0.25); }
+        .badge.buy         { background: rgba(56, 161, 105, 0.12); color: #38a169; border: 1px solid rgba(56, 161, 105, 0.25); }
+        .badge.strong-buy  { background: rgba(56, 161, 105, 0.2); color: #276749; border: 1px solid rgba(56, 161, 105, 0.4); font-weight: 700; }
 
         .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.04);
+            border: 3px solid rgba(0, 0, 0, 0.03);
             width: 32px;
             height: 32px;
             border-radius: 50%;
@@ -258,7 +266,7 @@
             bottom: 125%;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(22, 22, 26, 0.98);
+            background: rgba(255, 255, 255, 0.98);
             color: var(--text-primary);
             padding: 0.8rem 1rem;
             border-radius: 10px;
@@ -268,8 +276,8 @@
             visibility: hidden;
             opacity: 0;
             transition: opacity 0.15s ease, visibility 0.15s ease;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 9px 9px 24px rgba(163, 177, 198, 0.25);
             z-index: 999;
             font-weight: normal;
             line-height: 1.5;
@@ -285,7 +293,7 @@
         #search-suggestions li {
             padding: 0.7rem 1rem;
             cursor: pointer;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.03);
             transition: background-color 0.15s ease;
             font-size: 0.88rem;
             text-align: left;
@@ -293,7 +301,7 @@
         }
 
         #search-suggestions li:hover {
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: rgba(0, 0, 0, 0.02);
             color: var(--accent-pink);
         }
 
@@ -312,8 +320,8 @@
         }
 
         .tab-button {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.85);
             color: var(--text-secondary);
             padding: 0.8rem 1.5rem;
             border-radius: 12px;
@@ -325,18 +333,23 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            box-shadow: 
+                3px 3px 6px rgba(163, 177, 198, 0.25), 
+                -3px -3px 6px rgba(255, 255, 255, 0.8);
         }
 
         .tab-button:hover {
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.85);
             color: var(--text-primary);
         }
 
         .tab-button.active {
-            background: rgba(224, 168, 153, 0.15);
+            background: rgba(255, 255, 255, 0.45);
             color: var(--accent-pink);
-            border-color: rgba(224, 168, 153, 0.4);
-            box-shadow: 0 4px 20px rgba(224, 168, 153, 0.15);
+            border-color: rgba(217, 155, 130, 0.35);
+            box-shadow: 
+                inset 3px 3px 6px rgba(163, 177, 198, 0.3), 
+                inset -3px -3px 6px rgba(255, 255, 255, 0.8);
         }
     </style>
 </head>
@@ -400,10 +413,10 @@
             <div class="card">
                 <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
                     <span>🔍 KOSPI 50대 우량주 스캐너 전체보기</span>
-                    <select id="sort-select" onchange="handleSortChange()" style="background: rgba(255, 255, 255, 0.03); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.8rem; cursor: pointer; outline: none; font-weight: 600;">
-                        <option value="market_cap" style="background:#121214; color:#fff;">시총 순으로 보기</option>
-                        <option value="change_pct" style="background:#121214; color:#fff;">상승률 순으로 보기</option>
-                        <option value="z_score" style="background:#121214; color:#fff;">과열도(Z-Score) 순으로 보기</option>
+                    <select id="sort-select" onchange="handleSortChange()" style="background: rgba(255, 255, 255, 0.65); color: var(--text-primary); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.8rem; cursor: pointer; outline: none; font-weight: 600;">
+                        <option value="market_cap" style="background:#fff; color:#1a202c;">시총 순으로 보기</option>
+                        <option value="change_pct" style="background:#fff; color:#1a202c;">상승률 순으로 보기</option>
+                        <option value="z_score" style="background:#fff; color:#1a202c;">과열도(Z-Score) 순으로 보기</option>
                     </select>
                 </div>
                 <div id="full-scanner-list">
@@ -420,12 +433,12 @@
                     <span style="font-size: 0.9rem; color: var(--text-secondary);">평균 신호 승률</span>
                     <span style="font-size: 1.8rem; font-weight: 700; color: var(--accent-green);" id="bt-hit-rate">72.12%</span>
                 </div>
-                <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.8rem;">
+                <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; border-top: 1px solid rgba(0, 0, 0, 0.06); padding-top: 0.8rem;">
                     * <strong>과열 신호 적중률</strong>: <span id="bt-overheat-rate">74.3%</span> (5일 내 조정)<br>
                     * <strong>조정 완료 적중률</strong>: <span id="bt-rebalance-rate">70.2%</span> (5일 내 반등)<br>
                     * <strong>누적 시뮬레이션</strong>: <span id="bt-total-signals">860회</span> 신호 검증 완료
                 </div>
-                <div style="margin-top: 1rem; border-top: 1px dashed rgba(255, 255, 255, 0.05); padding-top: 0.8rem;">
+                <div style="margin-top: 1rem; border-top: 1px dashed rgba(0, 0, 0, 0.06); padding-top: 0.8rem;">
                     <div style="font-size: 0.82rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-primary);">🏆 리밸런싱 최적화 상위 종목</div>
                     <ul id="bt-top-performers" style="list-style: none; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary);">
                         <!-- 동적 주입 -->
@@ -437,12 +450,12 @@
             <div class="card" style="margin-top: 1.5rem;">
                 <div class="card-title">🔍 관심종목 신호 검색기</div>
                 <div style="position: relative; margin-bottom: 1rem;">
-                    <input type="text" id="ticker-search" placeholder="종목명을 입력하세요 (예: 삼성, 현대)" oninput="filterSearchSuggestions()" style="width: 100%; padding: 0.8rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); outline: none; font-size: 0.9rem; font-weight: 500;" autocomplete="off">
-                    <ul id="search-suggestions" style="position: absolute; top: 105%; left: 0; right: 0; background: #121214; border: 1px solid var(--border-color); border-radius: 10px; max-height: 200px; overflow-y: auto; z-index: 1000; list-style: none; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
+                    <input type="text" id="ticker-search" placeholder="종목명을 입력하세요 (예: 삼성, 현대)" oninput="filterSearchSuggestions()" style="width: 100%; padding: 0.8rem 1rem; background: rgba(255,255,255,0.65); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 10px; color: var(--text-primary); outline: none; font-size: 0.9rem; font-weight: 500;" autocomplete="off">
+                    <ul id="search-suggestions" style="position: absolute; top: 105%; left: 0; right: 0; background: rgba(255,255,255,0.98); border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 10px; max-height: 200px; overflow-y: auto; z-index: 1000; list-style: none; display: none; box-shadow: 9px 9px 24px rgba(163, 177, 198, 0.25);">
                         <!-- 자동완성 제안 리스트 삽입 영역 -->
                     </ul>
                 </div>
-                <div id="search-result-inspector" style="background: rgba(255, 255, 255, 0.01); border: 1px dashed var(--border-color); border-radius: 12px; padding: 1.2rem; min-height: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                <div id="search-result-inspector" style="background: rgba(255, 255, 255, 0.4); border: 1px dashed rgba(0, 0, 0, 0.1); border-radius: 12px; padding: 1.2rem; min-height: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                     <span style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6;">위 검색창에 종목명을 입력하고 선택하시면<br>Z-Score와 투자 판단 신호가 나타납니다.</span>
                 </div>
             </div>

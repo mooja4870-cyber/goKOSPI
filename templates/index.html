@@ -542,6 +542,12 @@
                         <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'5y',this)">5년</button>
                         <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'10y',this)">10년</button>
                         <button class="chart-period-btn" onclick="loadChart(currentChartTicker,'max',this)">최대</button>
+                        
+                        <!-- 신호 한글명 토글 체크박스 -->
+                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.8rem; cursor: pointer; user-select: none;">
+                            <input type="checkbox" id="toggle-marker-text" onchange="applyMarkerTextVisibility()" style="cursor: pointer; accent-color: var(--accent-pink);">
+                            차트에 신호 한글명 표시
+                        </label>
                     </div>
                 </div>
                 <button id="chart-modal-close" onclick="closeChartModal()">✕</button>
@@ -693,6 +699,7 @@ A. 아닙니다!
         let candleSeries = null;
         let zscoreChart = null;
         let zscoreSeries = null;
+        let currentChartMarkers = []; // 차트 마커 캐시
 
         const SIGNAL_LABEL_MAP = {
             STRONG_SELL: '🔴 강력매도', OVERHEAT: '🟠 익절권장', CAUTION: '🟡 경계관망',
@@ -709,9 +716,25 @@ A. 아닙니다!
             document.getElementById('chart-modal-title').textContent = `📈 ${name} (${ticker})`;
             document.getElementById('chart-modal-overlay').classList.add('open');
             document.body.style.overflow = 'hidden';
+            // 체크박스 기본값 미표기(false) 설정
+            document.getElementById('toggle-marker-text').checked = false;
             // 기간 버튼 초기화
             document.querySelectorAll('.chart-period-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
             loadChart(ticker, '3mo', null);
+        }
+
+        // ── 마커 텍스트 노출 토글 ──────────────────────
+        function applyMarkerTextVisibility() {
+            if (!candleSeries || !currentChartMarkers) return;
+            const showText = document.getElementById('toggle-marker-text').checked;
+            const formatted = currentChartMarkers.map(m => ({
+                time: m.time,
+                position: m.position,
+                color: m.color,
+                shape: m.shape,
+                text: showText ? m.originalText : "" // 체크 여부에 따라 한글 노출 결정
+            }));
+            candleSeries.setMarkers(formatted);
         }
 
         function closeChartModal(e) {
@@ -766,9 +789,15 @@ A. 아닙니다!
                     wickUpColor: '#e53e3e', wickDownColor: '#3182ce',
                 });
                 candleSeries.setData(data.candles);
-                if (data.markers && data.markers.length > 0) {
-                    candleSeries.setMarkers(data.markers);
-                }
+                // 마커 데이터 캐싱 및 텍스트 토글 적용
+                currentChartMarkers = (data.markers || []).map(m => ({
+                    time: m.time,
+                    position: m.position,
+                    color: m.color,
+                    shape: m.shape,
+                    originalText: m.text
+                }));
+                applyMarkerTextVisibility();
                 candleChart.timeScale().fitContent();
 
                 // ─ Z-Score 히스토그램 ─

@@ -149,11 +149,18 @@
         }
 
         .action-list li {
-            padding: 0.4rem 0;
+            padding: 0.4rem 0.6rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.03);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.15s;
+        }
+
+        .action-list li:hover {
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .action-list li:last-child {
@@ -1309,6 +1316,9 @@ A. 아닙니다!
                     sellList.forEach(item => {
                         const li = document.createElement('li');
                         const label = item.signal === 'STRONG_SELL' ? '🔴 강력매도' : '🟠 익절권장';
+                        const safeName = (item.name || item.ticker).replace(/'/g, "\\'");
+                        li.title = "클릭 → 차트 보기";
+                        li.onclick = () => openChartModal(item.ticker, safeName);
                         li.innerHTML = `
                             <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
                             <span style="color:var(--accent-pink); font-weight:bold;">${label} (Z: ${formatZScore(item.z_score, 1)})</span>
@@ -1328,7 +1338,9 @@ A. 아닙니다!
                         let label = '🩵 관심매집';
                         if (item.signal === 'STRONG_BUY') label = '💚 강력매수';
                         else if (item.signal === 'BUY') label = '🟢 매수시그널';
-                        
+                        const safeName = (item.name || item.ticker).replace(/'/g, "\\'");
+                        li.title = "클릭 → 차트 보기";
+                        li.onclick = () => openChartModal(item.ticker, safeName);
                         li.innerHTML = `
                             <span><strong>${item.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">${item.ticker.split('.')[0]}</span></span>
                             <span style="color:var(--accent-green); font-weight:bold;">${label} (하락: -${item.drawdown_pct.toFixed(1)}%)</span>

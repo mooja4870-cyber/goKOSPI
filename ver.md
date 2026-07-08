@@ -1,5 +1,31 @@
 # Version History
 
+## v2.9.2
+
+Date: 2026-07-08
+
+### 변경 내용
+* AI 예측 숏컷 버튼 클릭 시 발생하던 스크립트 오타 에러(`search-input` -> `ticker-search`) 수정
+
+### 수정 파일
+* templates/index.html
+
+### 비고
+* 버튼 무반응 버그 해결 (Hotfix)
+
+## v2.9.1
+
+Date: 2026-07-08
+
+### 변경 내용
+* 대시보드 좌측 종목 리스트(`[📈 차트]` 옆)에 `[🔮 AI예측]` 숏컷 버튼 추가 노출
+
+### 수정 파일
+* templates/index.html
+
+### 비고
+* UI 가시성 긴급 보완 (Hotfix)
+
 ## v2.9.0
 
 Date: 2026-07-08

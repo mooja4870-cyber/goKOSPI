@@ -181,8 +181,8 @@ def update_signal_cache_worker():
         except Exception as e:
             print(f"[!] 캐시 갱신 도중 예외 발생: {e}")
             
-        # 10분(600초) 주기로 실시간 캐시 및 통계 갱신
-        time.sleep(600)
+        # 5분(300초) 주기로 실시간 캐시 및 통계 갱신
+        time.sleep(300)
 
 @app.route("/")
 def index():

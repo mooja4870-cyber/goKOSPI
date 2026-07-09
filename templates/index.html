@@ -614,7 +614,7 @@
         <div class="action-card sell">
             <div>
                 <div class="card-header-desc">🚨 Sell & Warning Signals</div>
-                <div class="card-main-val" style="color: var(--accent-pink);">익절 및 추가매수 금지</div>
+                <div class="card-main-val" style="color: var(--accent-pink);">수익 실현(익절) 및 신규 매수 금지</div>
             </div>
             <ul class="action-list" id="sell-recommendations">
                 <div class="spinner"></div>
@@ -666,7 +666,18 @@
             <div class="card">
                 <div class="card-title">📈 백테스트 검증 통계 (최근 3개년)</div>
                 <div style="margin: 1rem 0; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.9rem; color: var(--text-secondary);">평균 신호 승률</span>
+                    <span class="tooltip-wide" style="font-size: 0.9rem; color: var(--text-secondary); border-bottom: 1px dotted var(--text-secondary); cursor: help;" data-tooltip="💡 승률의 진짜 의미
+Q. 승률 74% = 무조건 그만큼 수익이 난다?
+A. 아닙니다! 
+
+1. 언제 발동되나요?
+→ 온도계(Z-Score)가 파란색(-1.8 이하)으로 꽁꽁 얼어붙어 '강력 매수 시그널'이 떴을 때만 발동되는 확률입니다. 
+
+2. 74%의 뜻은 무엇인가요?
+→ 과거 1년 동안 해당 시그널이 발생했을 때 샀더니, 10번 중 7~8번은 5일 안에 반등에 성공해 수익 구간에 도달했다는 역사적 팩트입니다.
+
+3. 어떻게 써먹나요?
+→ 주가가 애매한 중간(흰색)이거나 과열 상태(빨간색)라면 절대 매수하지 말고, 파란색 시그널이 뜰 때까지 꾹 참고 기다려야 이 높은 확률을 온전히 내 편으로 만들 수 있습니다!">평균 신호 승률 ❓</span>
                     <span style="font-size: 1.8rem; font-weight: 700; color: var(--accent-green);" id="bt-hit-rate">- %</span>
                 </div>
                 <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; border-top: 1px solid rgba(0, 0, 0, 0.06); padding-top: 0.8rem;">
@@ -675,19 +686,7 @@
                     * <strong>누적 시뮬레이션</strong>: <span id="bt-total-signals">- 회</span> 신호 검증 완료
                 </div>
                 <div style="margin-top: 1rem; border-top: 1px dashed rgba(0, 0, 0, 0.06); padding-top: 0.8rem;">
-                    <div class="tooltip-wide" style="font-size: 0.82rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-primary); display: inline-block; border-bottom: 1px dotted var(--text-secondary);" data-tooltip="💡 승률의 진짜 의미 (중학생 버전 가이드)
-
-Q. 승률 91.7% = 지금 사면 91.7% 번다?
-A. 아닙니다! 
-
-1. 언제 적용되나요?
-→ 오직 종목의 Z-Score(온도계)가 -1.8 이하(매수시그널/강력매수)로 꽁꽁 얼어붙었을 때만 이 높은 승률이 발동돼요.
-
-2. 91.7%의 진짜 뜻은?
-→ 과거 3년 동안 이 종목이 '매수시그널'까지 떨어진 적이 총 12번 있었는데, 그중 11번은 사고 나서 5일 안에 반등에 성공해서 수익을 줬다는 역사적 사실이에요!
-
-3. 어떻게 써먹나요?
-→ 지금 Z-Score가 중립(흰색)이나 익절권장(주황)이라면 절대 지금 사면 안 돼요! 온도계가 -1.8 이하 파란색/초록색으로 떨어질 때까지 꾹 참고 기다렸다 사야 이 높은 확률을 내 편으로 만들 수 있어요!">🏆 리밸런싱 최적화 상위 종목 ❓</div>
+                    <div class="tooltip-wide" style="font-size: 0.82rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-primary); display: inline-block; border-bottom: 1px dotted var(--text-secondary);" data-tooltip="💡 시뮬레이션 결과, 과거 시그널 발생 시 반등 및 조정 적중률이 가장 우수했던 최상위 4개 종목입니다.">🏆 리밸런싱 최적화 상위 종목 ❓</div>
                     <ul id="bt-top-performers" style="list-style: none; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary);">
                         <!-- 동적 주입 -->
                     </ul>

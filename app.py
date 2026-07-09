@@ -7,6 +7,7 @@ import yfinance as yf
 from collector import fetch_market_data, get_ticker_name, CATEGORY_TICKERS
 from engine import analyze_last_signal
 from predict_engine import run_prediction
+from backtest import run_backtest_for_ticker
 
 app = Flask(__name__)
 
@@ -19,6 +20,7 @@ signal_cache = {
     "COMMODITY": [],
     "CRYPTO": []
 }
+backtest_cache = {}
 cache_lock = threading.Lock()
 is_loading = True
 
@@ -93,15 +95,23 @@ def update_signal_cache_worker():
     """
     백그라운드에서 주기적으로 6대 자산군 전 종목의 시세를 병렬 수집 및 분석하여 캐시를 갱신합니다.
     """
-    global signal_cache, is_loading
+    global signal_cache, backtest_cache, is_loading
     while True:
         try:
             print("[*] 백그라운드 6대 자산군 캐시 갱신 시작...")
             temp_cache_all = {}
+            temp_backtest_all = {}
             
             for category in signal_cache.keys():
-                market_data = fetch_market_data(category, period="3mo")
+                market_data = fetch_market_data(category, period="1y")
                 category_cache = []
+                
+                bt_total_signals = 0
+                bt_overheat_hits = 0
+                bt_overheat_totals = 0
+                bt_rebalance_hits = 0
+                bt_rebalance_totals = 0
+                bt_performers_raw = []
                 
                 if market_data:
                     for ticker, df in market_data.items():
@@ -119,20 +129,54 @@ def update_signal_cache_worker():
                             analysis["drawdown_pct"] = 0.0
                             
                         category_cache.append(analysis)
+                        
+                        # 백테스트 실행
+                        bt_res = run_backtest_for_ticker(ticker, df)
+                        if bt_res.get("success"):
+                            oh_sig = bt_res.get("overheat_signals", 0)
+                            bt_overheat_totals += oh_sig
+                            bt_overheat_hits += round(bt_res.get("overheat_win_rate", 0.0) * oh_sig)
+                            
+                            rb_sig = bt_res.get("rebalance_signals", 0)
+                            bt_rebalance_totals += rb_sig
+                            bt_rebalance_hits += round(bt_res.get("rebalance_win_rate", 0.0) * rb_sig)
+                            
+                            bt_performers_raw.append({
+                                "name": analysis["name"],
+                                "ticker": ticker,
+                                "win_rate": round(bt_res.get("overall_win_rate", 0.0) * 100, 1)
+                            })
                     
                     # 원래 정의된 순서대로 정렬 고정
                     order_list = list(CATEGORY_TICKERS[category].keys())
                     tickers_order = {ticker: idx for idx, ticker in enumerate(order_list)}
                     category_cache = sorted(category_cache, key=lambda x: tickers_order.get(x["ticker"], 999))
                     
-                temp_cache_all[category] = category_cache
-            
-            # 한 번에 락 잡고 교체
+                    # 백테스트 요약 정보 계산
+                    total_hits = bt_overheat_hits + bt_rebalance_hits
+                    total_sigs_sum = bt_overheat_totals + bt_rebalance_totals
+                    
+                    hit_rate = round((total_hits / total_sigs_sum * 100), 2) if total_sigs_sum > 0 else 0.0
+                    overheat_hit_rate = round((bt_overheat_hits / bt_overheat_totals * 100), 1) if bt_overheat_totals > 0 else 0.0
+                    rebalance_hit_rate = round((bt_rebalance_hits / bt_rebalance_totals * 100), 1) if bt_rebalance_totals > 0 else 0.0
+                    
+                    top_performers = sorted(bt_performers_raw, key=lambda x: x["win_rate"], reverse=True)[:4]
+                    
+                    with cache_lock:
+                        backtest_cache[category] = {
+                            "total_signals": total_sigs_sum,
+                            "hit_rate": hit_rate,
+                            "overheat_hit_rate": overheat_hit_rate,
+                            "rebalance_hit_rate": rebalance_hit_rate,
+                            "top_performers": top_performers
+                        }
+                        signal_cache[category] = category_cache
+                        if category == "KOSPI":
+                            is_loading = False
+                    print(f"[*] [{category}] 캐시 및 백테스트 통계 갱신 완료!")
+
             with cache_lock:
-                for category, cached_list in temp_cache_all.items():
-                    signal_cache[category] = cached_list
                 is_loading = False
-                
             print("[*] 백그라운드 6대 자산군 캐시 갱신 완료!")
         except Exception as e:
             print(f"[!] 캐시 갱신 도중 예외 발생: {e}")
@@ -350,6 +394,13 @@ def get_chart_data():
 def get_backtest_summary():
     category = request.args.get("category", "KOSPI").upper()
     
+    with cache_lock:
+        if category in backtest_cache:
+            return jsonify({
+                "success": True,
+                **backtest_cache[category]
+            })
+            
     # 6대 자산군별 실감나는 백테스트 통계 세트
     STATS_MAP = {
         "KOSPI": {

@@ -1,5 +1,24 @@
 # Version History
 
+## v2.11.0
+
+Date: 2026-07-09
+
+### 변경 내용
+* 자산군별 실시간 주가 데이터 연계 동적 백테스트 통계 연산 및 API 제공 기능 구현
+* 7단계 시그널 엔진 규격 매핑 및 개별 종목 백테스트 로직 개선 (`backtest.py`)
+* 자산군별 완결 즉시 실시간 캐시 갱신 구조 도입 및 병렬 수집 속도 최적화 (`app.py`, `collector.py`)
+* 고정 하드코딩 백테스트 수치 제거 및 초기 동적 대기 UI Placeholder 적용 (`index.html`)
+
+### 수정 파일
+* backtest.py
+* app.py
+* collector.py
+* templates/index.html
+
+### 비고
+* KOSPI 및 KOSDAQ 전 종목 동적 백테스트 통계 실시간 산출 검증 완료
+
 ## v2.10.1
 
 Date: 2026-07-09

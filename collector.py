@@ -234,8 +234,8 @@ def fetch_market_data(category: str, period: str = "3mo") -> Dict[str, pd.DataFr
     
     market_data = {}
     
-    # 5개의 스레드로 스레드풀을 구성하여 병렬 개별 호출
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    # 15개의 스레드로 스레드풀을 구성하여 고속 병렬 개별 호출
+    with ThreadPoolExecutor(max_workers=15) as executor:
         future_to_ticker = {
             executor.submit(fetch_single_ticker, ticker, period): ticker 
             for ticker in tickers_list
@@ -253,8 +253,15 @@ def fetch_market_data(category: str, period: str = "3mo") -> Dict[str, pd.DataFr
     print(f"[*] [{category}] 데이터 수집 완료 (성공: {len(market_data)}/{len(tickers_list)} 종목)")
     return market_data
 
-def get_ticker_name(category: str, ticker: str) -> str:
+def get_ticker_name(arg1: str, arg2: str = None) -> str:
     """
-    지정된 카테고리 안에서 티커에 상응하는 종목명을 반환합니다.
+    지정된 카테고리 안에서 티커에 상응하는 종목명을 반환하거나, 티커만 주어지면 전체 카테고리에서 찾습니다.
     """
+    if arg2 is None:
+        ticker = arg1
+        for cat_dict in CATEGORY_TICKERS.values():
+            if ticker in cat_dict:
+                return cat_dict[ticker]
+        return ticker
+    category, ticker = arg1, arg2
     return CATEGORY_TICKERS.get(category, {}).get(ticker, ticker)

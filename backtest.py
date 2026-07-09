@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Any
-from collector import TICKERS, fetch_market_data, get_ticker_name
+from collector import fetch_market_data, get_ticker_name
 from engine import calculate_rebalancing_signals
 
 def run_backtest_for_ticker(ticker: str, df: pd.DataFrame, threshold_z: float = 2.5) -> Dict[str, Any]:
@@ -14,8 +14,8 @@ def run_backtest_for_ticker(ticker: str, df: pd.DataFrame, threshold_z: float = 
     # 지표 및 신호 시뮬레이션 계산
     df_signals = calculate_rebalancing_signals(df, threshold_z)
     
-    overheat_signals = df_signals[df_signals['Signal'] == 'OVERHEAT']
-    rebalanced_signals = df_signals[df_signals['Signal'] == 'REBALANCED']
+    overheat_signals = df_signals[df_signals['Signal'].isin(['OVERHEAT', 'STRONG_SELL'])]
+    rebalanced_signals = df_signals[df_signals['Signal'].isin(['MILD_BUY', 'BUY', 'STRONG_BUY'])]
     
     # 1. 과열 신호 검증 (5일 이내 하락 조정 발생률)
     overheat_hits = 0
@@ -66,13 +66,13 @@ def run_backtest_for_ticker(ticker: str, df: pd.DataFrame, threshold_z: float = 
         signal = df_signals['Signal'].iloc[i]
         
         # 과열 감지 시 매도 (현금화)
-        if signal == 'OVERHEAT' and position > 0:
+        if signal in ['OVERHEAT', 'STRONG_SELL'] and position > 0:
             cash = shares * close_price
             shares = 0.0
             position = 0.0
             
         # 조정 완료 감지 시 매수 (주식화)
-        elif signal == 'REBALANCED' and position == 0:
+        elif signal in ['MILD_BUY', 'BUY', 'STRONG_BUY'] and position == 0:
             shares = cash / close_price
             cash = 0.0
             position = 1.0
